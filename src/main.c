@@ -8,60 +8,160 @@
 ===============================================================================
  */
 
+#include <cr_section_macros.h>
+#include <NXP/crp.h>
+//#include "../include/redlib/sys/libconfig-arm.h"
+
+
+//NEED TO SWITCH TO Redlib library variant that you require (None, Nohost, Semihost)
+#include <stdio.h>
+
+
 #ifdef __USE_CMSIS
 #include "LPC17xx.h"
+#endif
+
 #include "type.h"
 #include "timer.h"
 #include "functions.h"
 #include "clock.h"
 #include "gpio.h"
-#endif
-
-#include <cr_section_macros.h>
-#include <NXP/crp.h>
+#include "adc.h"
+#include "alphanumeric.h"
+#include "lpc_types.h"
+#include "speed.h"
 
 // Variable to store CRP value in. Will be placed automatically
 // by the linker when "Enable Code Read Protect" selected.
 // See crp.h header for more information
 __CRP const unsigned int CRP_WORD = CRP_NO_CRP;
 
+//VARIABLES
+
+const char *HEX_CHAR_TABLE = "0123456789ABCDEF";
+
+uint_fast16_t analog_val;
+
+//FUNCTIONS
+
+void ADC_IRQHandler(void) {
+  analog_val = (LPC_ADC ->ADDR0 >> 4) & 0x0fff;
+  alpha_display(HEX_CHAR_TABLE[analog_val >> 8]);
+
+//  // Print result
+  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)) {
+   printf("%#X  %d\n", analog_val, analog_val);
+  }
+//
+//  // Start conversion
+  LPC_ADC ->ADCR |= LEFT_BIT_SHIFT(HIGH,24);
+}
+
+int color = 0;
+void toggleAllLEDs(){
+	switch(color){
+	case(0):
+ 	 pin0_gpio_set(LED_R1, HIGH);
+	 pin0_gpio_set(LED_B1, LOW);
+	 //MUST BE PIN 2
+	 pin2_gpio_set(LED_G1_p2, LOW);
+
+	 pin0_gpio_set(LED_R2, HIGH);
+	 pin0_gpio_set(LED_B2, LOW);
+	 pin0_gpio_set(LED_G2, LOW);
+	 color = color + 1;
+	break;
+	case(1):
+	 pin0_gpio_set(LED_R1, LOW);
+     pin0_gpio_set(LED_B1, HIGH);
+	 //MUST BE PIN 2
+     pin2_gpio_set(LED_G1_p2, LOW);
+
+     pin0_gpio_set(LED_R2, LOW);
+     pin0_gpio_set(LED_B2, HIGH);
+     pin0_gpio_set(LED_G2, LOW);
+     color = color + 1;
+	break;
+	case(2):
+	 pin0_gpio_set(LED_R1, LOW);
+	 pin0_gpio_set(LED_B1, LOW);
+	 //MUST BE PIN 2
+	 pin2_gpio_set(LED_G1_p2, HIGH);
+
+     pin0_gpio_set(LED_R2, LOW);
+	 pin0_gpio_set(LED_B2, LOW);
+	 pin0_gpio_set(LED_G2, HIGH);
+	 color = 0;
+	break;
+	}
+}
+
 void TIMER0_IRQHandler(void) {
   // Flip LED pin
-  LPC_GPIO0 ->FIOPIN ^= (1 << 22);
+  //LPC_GPIO0 ->FIOPIN ^= (1 << 22);
+  pin0_gpio_toggle(LED2);
+
+  toggleAllLEDs();
 
   // Clear interrupt flags, or else this interrupt will loop over and over
   LPC_TIM0->IR = 0xff;
 }
 
-int passedTimerValue = 0;
-
-// TODO: insert other include files here
-
-// TODO: insert other definitions and declarations here
-
-//Powers on and sets pin to output
-void init_on_Board_led2 (void)
+uint32_t checkvalue;
+void EINT3_IRQHandler (void)
 {
-	// Set GPIO - P0_22 - to be output
-	LPC_GPIO0->FIODIR |= (1 << 22);
+	checkvalue = GPIOCheckInterrupts(2, 1);
+	if (checkvalue == (1 << 2))
+	{
+		speed++;
+		//GPIOSetValue(0, 10, 1);
+	}
+	else if (checkvalue == (1 << 3))
+	{
+		speed--;
+		//GPIOSetValue(0, 10, 0);
+	}
+	else if (checkvalue == (1 << 4))
+	{
+		speed = 0;
+		//GPIOSetValue(0, 10, 0);
+	}
+
+	GPIOClearInterrupt();
 }
 
-//TODO REMOVE
-// Function to turn LED2 on
-void led2_on (void)
-{
-	LPC_GPIO0->FIOSET = (1 << 22);
-}
-
-// Function to turn LED2 off
-void led2_off (void)
-{
-	LPC_GPIO0->FIOCLR = (1 << 22);
-}
+//int rising_edge = 1;
+//void TIMER0_IRQHandler(void) {
+//  LPC_TIM0 ->TC = 0;
+//
+//  // 120482 cycles is 10ms at 12mhz
+//  if (!rising_edge && LPC_TIM0 ->CR0 > 120482) {
+//    LPC_GPIO0 ->FIOPIN ^= (1 << 22);
+//
+//    // Play with Timer1 to reset the out pin
+//    LPC_TIM1 ->MR0 = 0; // match value
+//    LPC_TIM1 ->EMR = 1 << 4;
+//    LPC_TIM1 ->TCR = 1;
+//
+//    // make sure it has a clock cycle to reset
+//    __NOP();
+//
+//    // Reconfigure emr to
+//    LPC_TIM1 ->TCR = 0x02;          // reset timer
+//    LPC_TIM1 ->EMR = 2 << 4;
+//    LPC_TIM1 ->MR0 = LPC_TIM0 ->CR0; // match value
+//    LPC_TIM1 ->TCR = 1;
+//  }
+//
+//  rising_edge = !rising_edge;
+//  LPC_TIM0 ->IR = 0xff;           // reset all interrrupts
+//}
 
 
 // Returns 1 if it has reset since last checked. Should only happen exactly one time for every LPC_TIM0->MR0 number of cycles.
 // Returns 0 if it has NOT reset.
+int passedTimerValue = 0;
+
 int hasTIM0Rest(){
 	int currTimerValue = LPC_TIM0 -> TC;
 	//If the passed timer value is large then the current timer value.  I.E. its been reset.
@@ -72,10 +172,6 @@ int hasTIM0Rest(){
 		passedTimerValue = currTimerValue;
 		return 0;
 	}
-}
-
-int captureTIM1(){
-
 }
 
 void blinkBetweenLEDsWithSimpleCounter(){
@@ -99,7 +195,6 @@ void blinkBetweenLEDsWithSimpleCounter(){
 			}
 		}
 	}
-	return 0 ;
 }
 
 void blinkBetweenLEDsWithTimerUsingResetOnMatch(){
@@ -123,7 +218,6 @@ void blinkBetweenLEDsWithTimerUsingResetOnMatch(){
 			}
 		}
 	}
-	return 0;
 }
 
 void blinkBetweenLEDsWithTimerUsingInteruptOnMatch(){
@@ -146,13 +240,15 @@ void blinkBetweenLEDsWithTimerUsingInteruptOnMatch(){
 			}
 		}
 	}
-	return 0;
 }
 
 void initReactionDetection (void){
 	//Inits and turns on reaction led.
-	pin0_gpio_init(0, 10);
-	pin0_gpio_set(22,HIGH);
+	pin0_gpio_init(0, 11);
+ 	pin0_gpio_set(11,HIGH);
+
+	//Inits reaction detection ADC pin.
+//	initADC(0);
 }
 
 void init_LED2_with_TIMER3_to_blink_every_second (void){
@@ -173,16 +269,16 @@ void setupTIMER0_to_interupt_on_match(){
 	  // No prescaling
 	  LPC_TIM0 ->PR = 0; // no prescalling for the peripheral clock in
 
-	  LPC_TIM0 ->CCR = (0x1 << 0)  // Setting up the Capture for CAP.0 on rising edge
-					 | (0x1 << 3)  // Setting up the Capture for CAP.1 on rising edge
-					 | (0x1 << 2)  // Enable interrupt for CAP.0
-					 | (0x1 << 5); // Enable interrupt for CAP.1
+//	  LPC_TIM0 ->CCR = (0x1 << 0)  // Setting up the Capture for CAP.0 on rising edge
+//					 | (0x1 << 3)  // Setting up the Capture for CAP.1 on rising edge
+//					 | (0x1 << 2)  // Enable interrupt for CAP.0
+//					 | (0x1 << 5); // Enable interrupt for CAP.1
 
 	  // Interrupt and Reset on MR0 and MR1
 		  // Match Control Register
 		  //   1 in bit 0 - timer will trigger the interrupt when it matches
 		  //   1 in bit 1 - timer will automatically reset to 0 when it matches
-	  LPC_TIM0 ->MCR = (1 << 0) | (1 << 1);
+	  LPC_TIM0 ->MCR |= (1 << 0) | (1 << 1);
 
 	  // Disable timer
 	  LPC_TIM0 ->TCR = 0x02;
@@ -198,21 +294,102 @@ void setupTIMER0_to_interupt_on_match(){
 
 	  NVIC_EnableIRQ(TIMER0_IRQn);
 }
-void blinkOnBoardLED2OnMatchWithInteruptWithTimer0(){
+void initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0(){
 	pin0_gpio_init(OUTPUT, LED2);
+	//Timer will be set up to interrupt on match about every one second. Interupt above should toggle LED and clear interrupt.
 	setupTIMER0_to_interupt_on_match();
 }
 
+void init_both_RGB_LED_to_blink(){
+	pin0_gpio_init(OUTPUT, LED_R1);
+	pin0_gpio_init(OUTPUT, LED_B1);
+	pin2_gpio_init(OUTPUT, LED_G1_p2); //Must be pin 2!
 
-int init(void){
+	pin0_gpio_init(OUTPUT, LED_R2);
+	pin0_gpio_init(OUTPUT, LED_B2);
+	pin0_gpio_init(OUTPUT, LED_G2);
+}
+
+//void init_button_press_detection_george(void){
+//	  LPC_SC ->CLKSRCSEL = 1;   // Select main clock source
+//	  LPC_SC ->PLL0CON = 0;     // Bypass PLL0, use clock source directly
+//
+//	  // Feed the PLL register so the PLL0CON value goes into effect
+//	  LPC_SC ->PLL0FEED = 0xAA; // set to 0xAA
+//	  LPC_SC ->PLL0FEED = 0x55; // set to 0x55
+//
+//	  // Set clock divider to 0+1=1
+//	  LPC_SC ->CCLKCFG = 0;
+//
+//	  // Choose undivided peripheral clocks for TIMER0,1
+//	  LPC_SC ->PCLKSEL0 |= (1 << 2);
+//	  LPC_SC ->PCLKSEL0 |= (1 << 4);
+//
+//	  // Power TIMER0, TIMER1
+//	  LPC_SC ->PCONP |= 3;
+//
+//	  // Bring MAT1.0 low on timer1 match
+//	  LPC_TIM1 ->EMR = 2 << 4;
+//
+//	  // Setup IO pins
+//	  LPC_GPIO0 ->FIODIR = (1 << 22);
+//	  LPC_GPIO0 ->FIOSET = (1 << 22);
+//
+//	  // Configure pins
+//	  //   P1.26 as CAP0.0 (TIMER0 capture pin 0)
+//	  //   P1.27 as CAP0.1 (TIMER0 capture pin 1)
+//	  //   P1.22 as MAT1.0
+//	  LPC_PINCON ->PINSEL3 |= (3 << 20) | (3 << 22) | (3 << 12);
+//
+//	  // Timer0 interrupt
+//	  NVIC_EnableIRQ(TIMER0_IRQn);
+//
+//	  // Configure timer one so that it constantly counts up, at the undivided
+//	  // clock rate. When CAP0.0 goes high or low, capture value is stored and
+//	  // timer value is reset and interrupt is triggered
+//	  LPC_TIM0 ->MCR = 1 << 1;
+//	  LPC_TIM0 ->TCR = 0x02;           // reset timer
+//	  LPC_TIM0 ->PR = 1;               // No prescale
+//	  LPC_TIM0 ->MR0 = 0xffffffff;     // match value (unnecessary)
+//	  LPC_TIM0 ->IR = 0xff;            // reset all interrrupts
+//	  LPC_TIM0 ->TCR = 1;              // enable timer
+//
+//	  // Capture Control Register
+//	  //   bit 0 - Capture on CAP0.0 rising edge
+//	  //   bit 1 - Capture on CAP0.0 falling edge
+//	  //   bit 2 - Interrupt on CAP0.0 event
+//	  LPC_TIM0 ->CCR = 1 | (1 << 1) | (1 << 2);
+//
+//	  // Timer 1, which controls led.
+//	  LPC_TIM1 ->PR = 1;          // Prescale
+//	  LPC_TIM1 ->TC = 0;          //  counter
+//}
+void init_button_press_detection(){
+	GPIOSetPull(2, 2, 2);
+	GPIOSetPull(2, 3, 2);
+	GPIOSetPull(2, 4, 2);
+	GPIOSetInterrupt(2, 2, 1);
+	GPIOSetInterrupt(2, 3, 1);
+	GPIOSetInterrupt(2, 4, 1);
+	//GPIOSetDir(0, 10, 1);
+}
+
+void init(void){
 	//Sets up CPU and perh clock to be main with no divs
 	setUpClkAsMainOscillatorNoDiv();
 
-	//This will setup and use Timer0
-	blinkOnBoardLED2OnMatchWithInteruptWithTimer0();
+	//TODO need to determine what macros are failing to get each to RGB LED to blink. RGB LED 2 is working. Need to check RGB led 1. Now only green comes on when red should.
+	init_both_RGB_LED_to_blink();
 
-	//inits and set reaction LED to high. on  sets
-	initReactionDetection();
+	//This will setup and use Timer0
+	//TODO remove from interupt all the RGG Blinking function!!!!!
+	initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0();
+
+	//Init_button_press_detection_george();
+	init_button_press_detection();
+
+	//inits and set reaction LED to high. Sets up reaction detection with ADC pin.
+//	initReactionDetection();
 
 	//	pin0_gpio_init(OUTPUT, LED2);
 //	pin0_gpio_init(OUTPUT, 10);
@@ -221,10 +398,6 @@ int init(void){
 	//	blinkLED2WithTimer3UsingResetOnMatch();
 	//	blinkBetweenLEDsWithTimerUsingResetOnMatch();
 
-
-
-
-
 	//blinks on board LED2 to ensure microprocessor is running
 	//setUpTimer3ToToggle_pin0_10_OnMatch();
 
@@ -232,7 +405,6 @@ int init(void){
 	//pin0_init(9);
 //Not being used (1 about yellow)
 	//pin0_init(10);
-
 }
 
 int main(void) {

@@ -18,13 +18,13 @@
 #define NULL    ((void *)0)
 #endif
 
-#ifndef FALSE
-#define FALSE   (0)
-#endif
-
-#ifndef TRUE
-#define TRUE    (1)
-#endif
+//#ifndef FALSE
+//#define FALSE   (0)
+//#endif
+//
+//#ifndef TRUE
+//#define TRUE    (1)
+//#endif
 
 #ifndef LOW
 #define LOW   (0)
@@ -35,19 +35,42 @@
 #endif
 
 #ifndef OUTPUT
-#define OUTPUT   (0)
+#define OUTPUT   (1)
 #endif
 
 #ifndef INPUT
-#define INPUT   (1)
+#define INPUT   (0)
 #endif
 
 #ifndef LED2
 #define LED2   (22)
 #endif
 
+#ifndef LED_R1
+#define LED_R1   (27)
+#endif
 
-typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
-typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
+#ifndef LED_B1
+#define LED_B1   (28)
+#endif
+
+#ifndef LED_G1_p2
+#define LED_G1_p2   (13)
+#endif
+
+#ifndef LED_R2
+#define LED_R2   (24)
+#endif
+
+#ifndef LED_B2
+#define LED_B2   (25)
+#endif
+
+#ifndef LED_G2
+#define LED_G2   (26)
+#endif
+
+//typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
+//typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 
 #endif  /* __TYPE_H__ */

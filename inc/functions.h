@@ -22,6 +22,8 @@
 // Everything not in range is set to 0 (possibly painful if you overwrite lesser bits)
 #define SETBITS0(var,start,len,val) var = ((val) << start) & MASK(start,len)
 
+#define LEFT_BIT_SHIFT(value, shifts) (value << (shifts))
+
 void setBit (int var, int bit, int value);
 
 #endif /* FUNCTIONS_H_ */

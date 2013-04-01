@@ -76,10 +76,6 @@ void setUpTimer3ToToggle_pin0_10_OnMatch(){
 	 // functions for each pin.)
 }
 
-void setupTIMER3_to_interupt_on_match(){
-
-}
-
 void setUpTimer0ForInteruptOnMatch(void)
 {
 	// Turn on timer 0
