@@ -30,6 +30,8 @@
 /* Includes ------------------------------------------------------------------- */
 #include "LPC17xx.h"
 #include "lpc_types.h"
+#include "lpc_types.h"
+
 
 
 #ifdef __cplusplus

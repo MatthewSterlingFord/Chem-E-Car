@@ -131,7 +131,7 @@ void TIMER0_IRQHandler(void) {
   //LPC_GPIO0 ->FIOPIN ^= (1 << 22);
   pin0_gpio_toggle(LED2);
 
-  toggleAllLEDs();
+  //toggleAllLEDs();
 
   // Clear interrupt flags, or else this interrupt will loop over and over
   LPC_TIM0->IR = 0xff;
@@ -191,7 +191,6 @@ void EINT3_IRQHandler (void)
 // Returns 1 if it has reset since last checked. Should only happen exactly one time for every LPC_TIM0->MR0 number of cycles.
 // Returns 0 if it has NOT reset.
 int passedTimerValue = 0;
-
 int hasTIM0Rest(){
 	int currTimerValue = LPC_TIM0 -> TC;
 	//If the passed timer value is large then the current timer value.  I.E. its been reset.
@@ -277,12 +276,12 @@ void initReactionDetection (void){
 	PinCfg.Portnum   = 0;
 	PINSEL_ConfigPin(&PinCfg);
 	GPIO_SetDir(0, 1 << PinCfg.Pinnum, OUTPUT);
-	GPIOSetValue(0, PinCfg.Pinnum, HIGH);
+	GPIO_SetValue(0, 1<< PinCfg.Pinnum);
 	//pin0_gpio_init(OUTPUT, 11);
  	//pin0_gpio_set(11,HIGH);
 
 	//Inits reaction detection ADC pin.
-	//initADC(0);
+	initADC(0);
 }
 
 void init_LED2_with_TIMER3_to_blink_every_second (void){
@@ -334,61 +333,61 @@ void initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0(){
 }
 
 void init_both_RGB_LED_to_blink(){
-	PINSEL_CFG_Type PinCfg;
-
-	PinCfg.Funcnum   = 0;
-	PinCfg.OpenDrain = 0;
-	PinCfg.Pinmode   = 0;
-
-	PinCfg.Pinnum    = LED_R1;
-	PinCfg.Portnum   = 0;
-	PINSEL_ConfigPin(&PinCfg);
-	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-	//BELOW NOT WORKING SO DOING ANOTHER WAY
-	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
-//		LPC_GPIO0 ->FIOSET3 = (1<<3);
-
-	PinCfg.Pinnum    = LED_B1;
-	PinCfg.Portnum   = 0;
-	PINSEL_ConfigPin(&PinCfg);
-	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-	//BELOW NOT WORKING SO DOING ANOTHER WAY
-	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
-//		LPC_GPIO0 ->FIOPIN3 |= (1<<4);
-
-	PinCfg.Pinnum    = LED_G1_p2;
-	PinCfg.Portnum   = 2;
-	PINSEL_ConfigPin(&PinCfg);
-	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
-
-
-	PinCfg.Pinnum    = LED_R2;
-	PinCfg.Portnum   = 0;
-	PINSEL_ConfigPin(&PinCfg);
-	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-
-	PinCfg.Pinnum    = LED_B2;
-	PinCfg.Portnum   = 0;
-	PINSEL_ConfigPin(&PinCfg);
-	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
-
-
-	PinCfg.Pinnum    = LED_G2;
-	PinCfg.Portnum   = 0;
-	PINSEL_ConfigPin(&PinCfg);
-	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+//	PINSEL_CFG_Type PinCfg;
+//
+//	PinCfg.Funcnum   = 0;
+//	PinCfg.OpenDrain = 0;
+//	PinCfg.Pinmode   = 0;
+//
+//	PinCfg.Pinnum    = LED_R1;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	//BELOW NOT WORKING SO DOING ANOTHER WAY
+//	GPIO_SetValue(PinCfg.Portnum, 1 << PinCfg.Pinnum);
+////		LPC_GPIO0 ->FIOSET3 = (1<<3);
+//
+//	PinCfg.Pinnum    = LED_B1;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	//BELOW NOT WORKING SO DOING ANOTHER WAY
+//	GPIO_SetValue(PinCfg.Portnum, 1 << PinCfg.Pinnum);
+////		LPC_GPIO0 ->FIOPIN3 |= (1<<4);
+//
+//	PinCfg.Pinnum    = LED_G1_p2;
+//	PinCfg.Portnum   = 2;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+//
+//
+//	PinCfg.Pinnum    = LED_R2;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//
+//	PinCfg.Pinnum    = LED_B2;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+//
+//
+//	PinCfg.Pinnum    = LED_G2;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
 
 // //OLD WAY OF INITING RGB LEDS
-//	pin0_gpio_init(OUTPUT, LED_R1);
-//	pin0_gpio_init(OUTPUT, LED_B1);
-//	pin2_gpio_init(OUTPUT, LED_G1_p2); //Must be pin 2!
-//
-//	pin0_gpio_init(OUTPUT, LED_R2);
-//	pin0_gpio_init(OUTPUT, LED_B2);
-//	pin0_gpio_init(OUTPUT, LED_G2);
+	pin0_gpio_init(OUTPUT, LED_R1);
+	pin0_gpio_init(OUTPUT, LED_B1);
+	pin2_gpio_init(OUTPUT, LED_G1_p2); //Must be pin 2!
+
+	pin0_gpio_init(OUTPUT, LED_R2);
+	pin0_gpio_init(OUTPUT, LED_B2);
+	pin0_gpio_init(OUTPUT, LED_G2);
 }
 
 //void init_button_press_detection_george(void){
@@ -458,13 +457,13 @@ void init_button_press_detection(){
 void init(void){
 	//Sets up CPU and perh clock to be main with no divs
 	setUpClkAsMainOscillatorNoDiv();
-
+	initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0();
 	//TODO need to determine what macros are failing to get each to RGB LED to blink. RGB LED 2 is working. Need to check RGB led 1. Now only green comes on when red should.
 	init_both_RGB_LED_to_blink();
 
 	//This will setup and use Timer0
 	//TODO remove from interupt all the RGG Blinking function!!!!!
-	initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0();
+
 
 	//Init_button_press_detection_george();
 	init_button_press_detection();
@@ -472,9 +471,7 @@ void init(void){
 	//inits and set reaction LED to high. Sets up reaction detection with ADC pin.
 	initReactionDetection();
 
-	//	pin0_gpio_init(OUTPUT, LED2);
-//	pin0_gpio_init(OUTPUT, 10);
-//	pin0_gpio_init(OUTPUT, 11);
+	//MANY NOT BE WORKING ANYMORE
 	//blinkBetweenLEDsWithSimpleCounter();
 	//	blinkLED2WithTimer3UsingResetOnMatch();
 	//	blinkBetweenLEDsWithTimerUsingResetOnMatch();
