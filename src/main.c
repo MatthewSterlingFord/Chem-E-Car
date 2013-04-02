@@ -21,6 +21,12 @@
 #include "LPC17xx.h"
 #endif
 
+#include "lpc17xx_gpio.h"
+#include "lpc17xx_pinsel.h"
+
+#include "sc_GPIO.h"
+#include "sc_timer.h"
+
 #include "type.h"
 #include "timer.h"
 #include "functions.h"
@@ -44,53 +50,77 @@ uint_fast16_t analog_val;
 
 //FUNCTIONS
 
-void ADC_IRQHandler(void) {
-  analog_val = (LPC_ADC ->ADDR0 >> 4) & 0x0fff;
-  alpha_display(HEX_CHAR_TABLE[analog_val >> 8]);
-
-//  // Print result
-  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)) {
-   printf("%#X  %d\n", analog_val, analog_val);
-  }
+//void ADC_IRQHandler(void) {
+//  analog_val = (LPC_ADC ->ADDR0 >> 4) & 0x0fff;
+//  alpha_display(HEX_CHAR_TABLE[analog_val >> 8]);
 //
-//  // Start conversion
-  LPC_ADC ->ADCR |= LEFT_BIT_SHIFT(HIGH,24);
-}
+////  // Print result
+//  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)) {
+//   printf("%#X  %d\n", analog_val, analog_val);
+//  }
+////
+////  // Start conversion
+//  LPC_ADC ->ADCR |= LEFT_BIT_SHIFT(HIGH,24);
+//}
 
 int color = 0;
 void toggleAllLEDs(){
 	switch(color){
 	case(0):
- 	 pin0_gpio_set(LED_R1, HIGH);
-	 pin0_gpio_set(LED_B1, LOW);
-	 //MUST BE PIN 2
-	 pin2_gpio_set(LED_G1_p2, LOW);
+		GPIOSetValue(0, LED_R1, HIGH);
+		GPIOSetValue(0, LED_B1, LOW);
+		GPIOSetValue(2, LED_G1_p2, LOW);
 
-	 pin0_gpio_set(LED_R2, HIGH);
-	 pin0_gpio_set(LED_B2, LOW);
-	 pin0_gpio_set(LED_G2, LOW);
+		GPIOSetValue(0, LED_R2, HIGH);
+		GPIOSetValue(0, LED_B2, LOW);
+		GPIOSetValue(0, LED_G2, LOW);
+
+	// 	 pin0_gpio_set(LED_R1, HIGH);
+//	 pin0_gpio_set(LED_B1, LOW);
+//	 //MUST BE PIN 2
+//	 pin2_gpio_set(LED_G1_p2, LOW);
+//
+//	 pin0_gpio_set(LED_R2, HIGH);
+//	 pin0_gpio_set(LED_B2, LOW);
+//	 pin0_gpio_set(LED_G2, LOW);
 	 color = color + 1;
-	break;
+	 break;
 	case(1):
-	 pin0_gpio_set(LED_R1, LOW);
-     pin0_gpio_set(LED_B1, HIGH);
-	 //MUST BE PIN 2
-     pin2_gpio_set(LED_G1_p2, LOW);
+		GPIOSetValue(0, LED_R1, LOW);
+		GPIOSetValue(0, LED_B1, HIGH);
+		GPIOSetValue(2, LED_G1_p2, LOW);
 
-     pin0_gpio_set(LED_R2, LOW);
-     pin0_gpio_set(LED_B2, HIGH);
-     pin0_gpio_set(LED_G2, LOW);
+		GPIOSetValue(0, LED_R2, LOW);
+		GPIOSetValue(0, LED_B2, HIGH);
+		GPIOSetValue(0, LED_G2, LOW);
+
+//	 pin0_gpio_set(LED_R1, LOW);
+//     pin0_gpio_set(LED_B1, HIGH);
+//	 //MUST BE PIN 2
+//     pin2_gpio_set(LED_G1_p2, LOW);
+//
+//     pin0_gpio_set(LED_R2, LOW);
+//     pin0_gpio_set(LED_B2, HIGH);
+//     pin0_gpio_set(LED_G2, LOW);
      color = color + 1;
 	break;
 	case(2):
-	 pin0_gpio_set(LED_R1, LOW);
-	 pin0_gpio_set(LED_B1, LOW);
-	 //MUST BE PIN 2
-	 pin2_gpio_set(LED_G1_p2, HIGH);
+		GPIOSetValue(0, LED_R1, LOW);
+		GPIOSetValue(0, LED_B1, LOW);
+		GPIOSetValue(2, LED_G1_p2, HIGH);
 
-     pin0_gpio_set(LED_R2, LOW);
-	 pin0_gpio_set(LED_B2, LOW);
-	 pin0_gpio_set(LED_G2, HIGH);
+		GPIOSetValue(0, LED_R2, LOW);
+		GPIOSetValue(0, LED_B2, LOW);
+		GPIOSetValue(0, LED_G2, HIGH);
+
+//	 pin0_gpio_set(LED_R1, LOW);
+//	 pin0_gpio_set(LED_B1, LOW);
+//	 //MUST BE PIN 2
+//	 pin2_gpio_set(LED_G1_p2, HIGH);
+//
+//     pin0_gpio_set(LED_R2, LOW);
+//	 pin0_gpio_set(LED_B2, LOW);
+//	 pin0_gpio_set(LED_G2, HIGH);
 	 color = 0;
 	break;
 	}
@@ -181,15 +211,9 @@ void blinkBetweenLEDsWithSimpleCounter(){
 		i++ ;
 		if(i%100000 == 0){
 			if(onIndicator == 0){
-				led2_off();
-				pin0_9_on();
-				pin0_10_on();
 				onIndicator = 1;
 				pin0_gpio_toggle(11);
 			}else{
-				led2_on();
-				pin0_9_off();
-				pin0_10_on();
 				pin0_gpio_toggle(11);
 				onIndicator = 0;
 			}
@@ -243,12 +267,22 @@ void blinkBetweenLEDsWithTimerUsingInteruptOnMatch(){
 }
 
 void initReactionDetection (void){
-	//Inits and turns on reaction led.
-	pin0_gpio_init(0, 11);
- 	pin0_gpio_set(11,HIGH);
+ //Inits and turns on reaction led.
+	PINSEL_CFG_Type PinCfg;
+
+	PinCfg.Funcnum   = 0;
+	PinCfg.OpenDrain = 0;
+	PinCfg.Pinmode   = 0;
+	PinCfg.Pinnum    = 11;
+	PinCfg.Portnum   = 0;
+	PINSEL_ConfigPin(&PinCfg);
+	GPIO_SetDir(0, 1 << PinCfg.Pinnum, OUTPUT);
+	GPIOSetValue(0, PinCfg.Pinnum, HIGH);
+	//pin0_gpio_init(OUTPUT, 11);
+ 	//pin0_gpio_set(11,HIGH);
 
 	//Inits reaction detection ADC pin.
-//	initADC(0);
+	//initADC(0);
 }
 
 void init_LED2_with_TIMER3_to_blink_every_second (void){
@@ -258,7 +292,6 @@ void init_LED2_with_TIMER3_to_blink_every_second (void){
 }
 
 void setupTIMER0_to_interupt_on_match(){
-
 	  // Set bits 2 and 3 of PCLKSEL0 to choose peripheral divider for TIMER0
 	  // Setting to 1 chooses no divider
 	  LPC_SC ->PCLKSEL0 = (1 << 2);
@@ -301,13 +334,61 @@ void initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0(){
 }
 
 void init_both_RGB_LED_to_blink(){
-	pin0_gpio_init(OUTPUT, LED_R1);
-	pin0_gpio_init(OUTPUT, LED_B1);
-	pin2_gpio_init(OUTPUT, LED_G1_p2); //Must be pin 2!
+	PINSEL_CFG_Type PinCfg;
 
-	pin0_gpio_init(OUTPUT, LED_R2);
-	pin0_gpio_init(OUTPUT, LED_B2);
-	pin0_gpio_init(OUTPUT, LED_G2);
+	PinCfg.Funcnum   = 0;
+	PinCfg.OpenDrain = 0;
+	PinCfg.Pinmode   = 0;
+
+	PinCfg.Pinnum    = LED_R1;
+	PinCfg.Portnum   = 0;
+	PINSEL_ConfigPin(&PinCfg);
+	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+	//BELOW NOT WORKING SO DOING ANOTHER WAY
+	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+//		LPC_GPIO0 ->FIOSET3 = (1<<3);
+
+	PinCfg.Pinnum    = LED_B1;
+	PinCfg.Portnum   = 0;
+	PINSEL_ConfigPin(&PinCfg);
+	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+	//BELOW NOT WORKING SO DOING ANOTHER WAY
+	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+//		LPC_GPIO0 ->FIOPIN3 |= (1<<4);
+
+	PinCfg.Pinnum    = LED_G1_p2;
+	PinCfg.Portnum   = 2;
+	PINSEL_ConfigPin(&PinCfg);
+	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+
+
+	PinCfg.Pinnum    = LED_R2;
+	PinCfg.Portnum   = 0;
+	PINSEL_ConfigPin(&PinCfg);
+	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+
+	PinCfg.Pinnum    = LED_B2;
+	PinCfg.Portnum   = 0;
+	PINSEL_ConfigPin(&PinCfg);
+	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+
+
+	PinCfg.Pinnum    = LED_G2;
+	PinCfg.Portnum   = 0;
+	PINSEL_ConfigPin(&PinCfg);
+	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+
+// //OLD WAY OF INITING RGB LEDS
+//	pin0_gpio_init(OUTPUT, LED_R1);
+//	pin0_gpio_init(OUTPUT, LED_B1);
+//	pin2_gpio_init(OUTPUT, LED_G1_p2); //Must be pin 2!
+//
+//	pin0_gpio_init(OUTPUT, LED_R2);
+//	pin0_gpio_init(OUTPUT, LED_B2);
+//	pin0_gpio_init(OUTPUT, LED_G2);
 }
 
 //void init_button_press_detection_george(void){
@@ -389,7 +470,7 @@ void init(void){
 	init_button_press_detection();
 
 	//inits and set reaction LED to high. Sets up reaction detection with ADC pin.
-//	initReactionDetection();
+	initReactionDetection();
 
 	//	pin0_gpio_init(OUTPUT, LED2);
 //	pin0_gpio_init(OUTPUT, 10);

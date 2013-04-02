@@ -11,12 +11,15 @@
 #include "functions.h"
 
 //1 is output and 0 is input
+//FIOxDIR
+//0 Controlled pin is input.
+//1 Controlled pin is output.
 void pin0_gpio_init (int output, int pinNumber)
 {
 	switch (output){
 	case 1:
 		LPC_GPIO0 -> FIODIR  |= 1 << pinNumber;
-		LPC_GPIO0 -> FIOPIN  |= 1 << pinNumber;
+		LPC_GPIO0 -> FIOSET  |= 1 << pinNumber;
 	break;
 	case 0:
 		LPC_GPIO0 -> FIODIR  &= ~(1<<pinNumber);

@@ -17,8 +17,8 @@
  * warranty that such application will be suitable for the specified
  * use without further testing or modification.
 ****************************************************************************/
-#ifndef __TIMER_H 
-#define __TIMER_H
+#ifndef __SC_TIMER_H
+#define __SC_TIMER_H
 
 /* The test is either MAT_OUT or CAP_IN. Default is MAT_OUT. */
 /* If running DMA test, External match is not needed to trigger DMA, but still 

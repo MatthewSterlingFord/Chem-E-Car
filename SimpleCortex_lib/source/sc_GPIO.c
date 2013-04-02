@@ -1,6 +1,6 @@
 #include "lpc17xx.h"
 #include "lpc_types.h"
-#include "GPIO.h"
+#include "sc_GPIO.h"
 static LPC_GPIO_TypeDef (* const LPC_GPIO[5]) = { LPC_GPIO0, LPC_GPIO1, LPC_GPIO2, LPC_GPIO3, LPC_GPIO4  };
 
 

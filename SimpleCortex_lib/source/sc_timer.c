@@ -20,7 +20,7 @@
 ****************************************************************************/
 #include "lpc17xx.h"
 #include "lpc_types.h"
-#include "timer.h"
+#include "sc_timer.h"
 #include "float.h"
 
 volatile uint32_t timer0_m0_counter = 0;
