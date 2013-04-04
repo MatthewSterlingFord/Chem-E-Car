@@ -24,33 +24,33 @@ extern volatile uint32_t ADCValue[ADC_NUM];
 extern volatile uint32_t ADCIntDone;
 uint32_t variable=0;
 
-void ADC_IRQHandler (void) {
-	uint32_t res;
-	float voltage;
-	if((LPC_ADC->ADDR0 >> 31) & 1){
-		  res = (LPC_ADC->ADDR0 >> 4) & 0xFFF;
-		  voltage = ((float)res/(float)0xFFF)*(float)3.1;
-		 // printf("%f %s\n", voltage, "Volts");
-		  if(res >= 0xAAA){
-			  //printf("%d\n", res);
-			  GPIOSetValue(0, LED_R2, HIGH);
-			  GPIOSetValue(0, LED_B2, LOW);
-			  GPIOSetValue(0, LED_G2, LOW);
-		  }else if(res >= 0x555){
-			  //printf("%d\n", res);
-			  GPIOSetValue(0, LED_R2, LOW);
-			  			  GPIOSetValue(0, LED_B2, HIGH);
-			  			  GPIOSetValue(0, LED_G2, LOW);
-		  }else{
-			  //printf("%d\n", res);
-			  GPIOSetValue(0, LED_R2, LOW);
-			  			  GPIOSetValue(0, LED_B2, LOW);
-			  			  GPIOSetValue(0, LED_G2, HIGH);
-		  }
-		  //Restarts ADC Read
-		  LPC_ADC->ADCR |= (1 << 24);
-	  }
-}
+//void ADC_IRQHandler (void) {
+//	uint32_t res;
+//	float voltage;
+//	if((LPC_ADC->ADDR0 >> 31) & 1){
+//		  res = (LPC_ADC->ADDR0 >> 4) & 0xFFF;
+//		  voltage = ((float)res/(float)0xFFF)*(float)3.1;
+//		  //printf("%f %s\n", voltage * 3.32, "Volts");
+//		  if(res >= 0xAAA){
+//			  //printf("%d\n", res);
+//			  GPIOSetValue(0, LED_R2, HIGH);
+//			  GPIOSetValue(0, LED_B2, LOW);
+//			  GPIOSetValue(0, LED_G2, LOW);
+//		  }else if(res >= 0x555){
+//			  //printf("%d\n", res);
+//			  GPIOSetValue(0, LED_R2, LOW);
+//			  			  GPIOSetValue(0, LED_B2, HIGH);
+//			  			  GPIOSetValue(0, LED_G2, LOW);
+//		  }else{
+//			  //printf("%d\n", res);
+//			  GPIOSetValue(0, LED_R2, LOW);
+//			  			  GPIOSetValue(0, LED_B2, LOW);
+//			  			  GPIOSetValue(0, LED_G2, HIGH);
+//		  }
+//		  //Restarts ADC Read
+//		  LPC_ADC->ADCR |= (1 << 24);
+//	  }
+//}
 void initADC (int ADCNumber) {
 
 

@@ -39,6 +39,9 @@
 #include "lpc_types.h"
 #include "speed.h"
 #include "sevenseg.h"
+#include "lpc17xx_qei.h"
+#include "lpc17xx_mcpwm.h"
+//#include "nxp_qei.c"
 
 // Variable to store CRP value in. Will be placed automatically
 // by the linker when "Enable Code Read Protect" selected.
@@ -48,23 +51,9 @@ __CRP const unsigned int CRP_WORD = CRP_NO_CRP;
 //VARIABLES
 
 const char *HEX_CHAR_TABLE = "0123456789ABCDEF";
-volatile static uint32_t idealLoops = 0;
+volatile static uint32_t idleLoops = 0;
 uint_fast16_t analog_val;
 
-//FUNCTIONS
-
-//void ADC_IRQHandler(void) {
-//  analog_val = (LPC_ADC ->ADDR0 >> 4) & 0x0fff;
-//  alpha_display(HEX_CHAR_TABLE[analog_val >> 8]);
-//
-////  // Print result
-//  if ((CoreDebug->DHCSR & CoreDebug_DHCSR_C_DEBUGEN_Msk)) {
-//   printf("%#X  %d\n", analog_val, analog_val);
-//  }
-////
-////  // Start conversion
-//  LPC_ADC ->ADCR |= LEFT_BIT_SHIFT(HIGH,24);
-//}
 
 /******************************************************************************
 ** Function name:		PWM1_IRQHandler
@@ -78,241 +67,152 @@ uint_fast16_t analog_val;
 ******************************************************************************/
 void PWM1_IRQHandler (void)
 {
-  uint32_t regVal;
-  PWM_Set(1,6,speed);								//Set PWM offset
-  regVal = LPC_PWM1->IR;
-//  if ( regVal & MR0_INT )
-//  {
-//	match_counter1++;
-//  }
+	  uint32_t regVal;
+  if(LPC_PWM1 -> IR == (LPC_PWM1->IR) & (1<<1)){
+	  PWM_Set(1,1,speed);			//Set PWM offset
+  }else{
+ 	  PWM_Set(1,5,17);			//Set PWM offset
+  }
+  regVal = (LPC_PWM1->IR);
   LPC_PWM1->IR |= regVal;		/* clear interrupt flag on match 0 */
-  return;
 }
+
+long int num_overflows = 0;
+int current_anode = 1;
+
+char disp[4] = {'A', 'B', 'C', 'D'};
+int dots[4] = {0, 1, 0, 1};
+
+int led2_toggle = 0;
 
 void TIMER0_IRQHandler(void) {
   // Flip LED pin
   //LPC_GPIO0 ->FIOPIN ^= (1 << 22);
-  pin0_gpio_toggle(LED2);
-
+  if(led2_toggle == 100){
+	  pin0_gpio_toggle(LED2);
+	  led2_toggle = 0;
+  }else{
+	  led2_toggle++;
+  }
+  alpha_display(disp[current_anode-1],current_anode, dots[current_anode-1]);
   //toggleAllLEDs();
+  if(current_anode < 4){
+	  current_anode++;
+  }else{
+	  current_anode=1;
+  }
+  num_overflows++;
 
   // Clear ALL interrupt flags, or else this interrupt will loop over and over
   LPC_TIM0->IR = 0xff;
 }
 
-float timeSinceLastButtonDetection = 0;
+//float timeSinceLastButtonDetection = 0;
 //TODO determine best threshold (how to get it to be 1 second?)
-float debouncingThreshHold = 10000;
+
+float debouncingThreshHold = 150;
 uint32_t checkvalue;
 void EINT3_IRQHandler (void)
 {
-//	GPIOSetValue(2, SEVEN_SEG_CLOCK_1, 0);
-//	GPIOSetValue(2, SEVEN_SEG_DATA_INPUT_1, 0);
-//	GPIOSetValue(2, SEVEN_SEG_LATCH_1, 0);
-
-// Use Sys tick timer to debounce
-//	printf("%f %s\n",  "PastNumber", timeSinceLastButtonDetection, "IdealLoops", idealLoops);
-	if((LPC_TIM0 -> TC) > (debouncingThreshHold + timeSinceLastButtonDetection)){
+	if(num_overflows >= debouncingThreshHold){
+	//	printf("%d %d stuff\n", LPC_QEI->QEIVEL, LPC_QEI->QEICAP);
 		checkvalue = GPIOCheckInterrupts(2, 1);
 		if (checkvalue == (1 << 2))
 		{
-//			GPIOSetValue(2, SEVEN_SEG_CLOCK_1, 0);
-//			GPIOSetValue(2, SEVEN_SEG_DATA_INPUT_1, 0);
-//			GPIOSetValue(2, SEVEN_SEG_LATCH_1, 1);
-			if(speed <= 100)
-				speed+=10;
-			//TODO Display speed on seven segment!
-			//GPIOSetValue(0, 10, 1);
+			if(speed < 100)
+				speed+=5;
 		}
 		else if (checkvalue == (1 << 3))
 		{
-//			GPIOSetValue(2, SEVEN_SEG_CLOCK_1, 1);
-//			GPIOSetValue(2, SEVEN_SEG_DATA_INPUT_1, 0);
-//			GPIOSetValue(2, SEVEN_SEG_LATCH_1, 0);
 			if(speed)
-				speed-=10;
-			//GPIOSetValue(0, 10, 0);
+				speed-=5;
 		}
 		else if (checkvalue == (1 << 4))
 		{
-//			GPIOSetValue(2, SEVEN_SEG_CLOCK_1, 0);
-//			GPIOSetValue(2, SEVEN_SEG_DATA_INPUT_1, 1);
-//			GPIOSetValue(2, SEVEN_SEG_LATCH_1, 0);
 			speed = 0;
-			//GPIOSetValue(0, 10, 0);
 		}
+		num_overflows = 0;
 	}
-		timeSinceLastButtonDetection = LPC_TIM0 -> TC;
-		alpha_display((char)((speed/10)+48));
-		GPIOClearInterrupt();
+	if(speed == 100){
+		disp[0] = 'a'; disp[1] = '0';
+	}else{
+		//48 since zero is 48 in ascii
+		disp[0] = (char)((speed/10)+48); disp[1] = (char)((speed%10)+48);
+	}
+		//alpha_display((char)((speed/10)+48), current_anode, TRUE);
+	GPIOClearInterrupt();
 }
 
-//int rising_edge = 1;
-//void TIMER0_IRQHandler(void) {
-//  LPC_TIM0 ->TC = 0;
-//
-//  // 120482 cycles is 10ms at 12mhz
-//  if (!rising_edge && LPC_TIM0 ->CR0 > 120482) {
-//    LPC_GPIO0 ->FIOPIN ^= (1 << 22);
-//
-//    // Play with Timer1 to reset the out pin
-//    LPC_TIM1 ->MR0 = 0; // match value
-//    LPC_TIM1 ->EMR = 1 << 4;
-//    LPC_TIM1 ->TCR = 1;
-//
-//    // make sure it has a clock cycle to reset
-//    __NOP();
-//
-//    // Reconfigure emr to
-//    LPC_TIM1 ->TCR = 0x02;          // reset timer
-//    LPC_TIM1 ->EMR = 2 << 4;
-//    LPC_TIM1 ->MR0 = LPC_TIM0 ->CR0; // match value
-//    LPC_TIM1 ->TCR = 1;
-//  }
-//
-//  rising_edge = !rising_edge;
-//  LPC_TIM0 ->IR = 0xff;           // reset all interrrupts
-//}
+int show_big_battery = 1;
 
-int color = 0;
-void toggleAllLEDs(){
-	switch(color){
-	case(0):
-		GPIOSetValue(0, LED_R1, HIGH);
-		GPIOSetValue(0, LED_B1, LOW);
-		GPIOSetValue(2, LED_G1_p2, LOW);
-
-		GPIOSetValue(0, LED_R2, HIGH);
-		GPIOSetValue(0, LED_B2, LOW);
-		GPIOSetValue(0, LED_G2, LOW);
-
-	// 	 pin0_gpio_set(LED_R1, HIGH);
-//	 pin0_gpio_set(LED_B1, LOW);
-//	 //MUST BE PIN 2
-//	 pin2_gpio_set(LED_G1_p2, LOW);
-//
-//	 pin0_gpio_set(LED_R2, HIGH);
-//	 pin0_gpio_set(LED_B2, LOW);
-//	 pin0_gpio_set(LED_G2, LOW);
-	 color = color + 1;
-	 break;
-	case(1):
-		GPIOSetValue(0, LED_R1, LOW);
-		GPIOSetValue(0, LED_B1, HIGH);
-		GPIOSetValue(2, LED_G1_p2, LOW);
-
-		GPIOSetValue(0, LED_R2, LOW);
-		GPIOSetValue(0, LED_B2, HIGH);
-		GPIOSetValue(0, LED_G2, LOW);
-
-//	 pin0_gpio_set(LED_R1, LOW);
-//     pin0_gpio_set(LED_B1, HIGH);
-//	 //MUST BE PIN 2
-//     pin2_gpio_set(LED_G1_p2, LOW);
-//
-//     pin0_gpio_set(LED_R2, LOW);
-//     pin0_gpio_set(LED_B2, HIGH);
-//     pin0_gpio_set(LED_G2, LOW);
-     color = color + 1;
-	break;
-	case(2):
-		GPIOSetValue(0, LED_R1, LOW);
-		GPIOSetValue(0, LED_B1, LOW);
-		GPIOSetValue(2, LED_G1_p2, HIGH);
-
-		GPIOSetValue(0, LED_R2, LOW);
-		GPIOSetValue(0, LED_B2, LOW);
-		GPIOSetValue(0, LED_G2, HIGH);
-
-//	 pin0_gpio_set(LED_R1, LOW);
-//	 pin0_gpio_set(LED_B1, LOW);
-//	 //MUST BE PIN 2
-//	 pin2_gpio_set(LED_G1_p2, HIGH);
-//
-//     pin0_gpio_set(LED_R2, LOW);
-//	 pin0_gpio_set(LED_B2, LOW);
-//	 pin0_gpio_set(LED_G2, HIGH);
-	 color = 0;
-	break;
+void ADC_IRQHandler (void) {
+	uint32_t res;
+	//float big_battery_voltage;
+	//float small_battey_voltage;
+	float voltage;
+	if((LPC_ADC->ADDR0 >> 31) & 1){
+		  res = (LPC_ADC->ADDR0 >> 4) & 0xFFF;
+		  voltage = ((float)res/(float)0xFFF)*(float)3.1;
+		  disp[2] = (char)(((int)voltage%10)+48);
+		  disp[3] = (char)(((int)(voltage*10)%10)+48);
+		  //printf("%d %s\n", (int)voltage, "Volts");
+		  if(res >= 0xAAA){
+			  GPIOSetValue(0, LED_R2, HIGH);
+			  GPIOSetValue(0, LED_B2, LOW);
+			  GPIOSetValue(0, LED_G2, LOW);
+		  }else if(res >= 0x555){
+			  GPIOSetValue(0, LED_R2, LOW);
+			  GPIOSetValue(0, LED_B2, HIGH);
+			  GPIOSetValue(0, LED_G2, LOW);
+		  }else{
+			  GPIOSetValue(0, LED_R2, LOW);
+			  GPIOSetValue(0, LED_B2, LOW);
+    		  GPIOSetValue(0, LED_G2, HIGH);
+		  }
+		  //Restarts ADC Read
+		  LPC_ADC->ADCR |= (1 << 24);
 	}
-}
 
-//// Returns 1 if it has reset since last checked. Should only happen exactly one time for every LPC_TIM0->MR0 number of cycles.
-//// Returns 0 if it has NOT reset.
-//int passedTimerValue = 0;
-//int hasTIM0Rest(){
-//	int currTimerValue = LPC_TIM0 -> TC;
-//	//If the passed timer value is large then the current timer value.  I.E. its been reset.
-//	if(passedTimerValue >= currTimerValue){
-//		passedTimerValue = currTimerValue;
-//		return 1;
+	//disp[2] = 'n'; disp[3] = 'a';
+
+	// CANNOT WORK UNTIL BURST MODE GETS WORKING
+
+	// BIG BATTERY const = 3.357, which is hooked into AD4
+//	if((LPC_ADC->ADDR3 >> 31) & 1){
+//		res = (LPC_ADC->ADDR3 >> 4) & 0xFFF;
+//		big_battery_voltage = (((float)res/(float)0xFFF)*(float)3.1)*3.357;
+//		//disp[2] = (char)(((int)big_battery_voltage%10)+48);
+//		//disp[3] = (char)(((int)(big_battery_voltage*10)%10)+48);
+//		//Restarts ADC Read
+//		LPC_ADC->ADCR |= (1 << 24);
+//	}
+//	// SMALL BATTERY const = 3.263, which is hooked into AD5
+//	if((LPC_ADC->ADDR4 >> 31) & 1){
+//		res = (LPC_ADC->ADDR4 >> 4) & 0xFFF;
+//		small_battery_voltage = (((float)res/(float)0xFFF)*(float)3.1)*3.263;
+//		//disp[2] = (char)(((int)small_battery_voltage%10)+48);
+//		//disp[3] = (char)(((int)(small_battery_voltage*10)%10)+48);
+//		//Restarts ADC Read
+//		LPC_ADC->ADCR |= (1 << 24);
+//	}
+//
+//	if(show_big_battery){
+//		disp[2] = (char)(((int)big_battery_voltage%10)+48);
+//		disp[3] = (char)(((int)(big_battery_voltage*10)%10)+48);
 //	}else{
-//		passedTimerValue = currTimerValue;
-//		return 0;
+//		disp[2] = (char)(((int)small_battery_voltage%10)+48);
+//		disp[3] = (char)(((int)(small_battery_voltage*10)%10)+48);
 //	}
-//}
 
-//void blinkBetweenLEDsWithSimpleCounter(){
-//	volatile static int i = 0;
-//	int onIndicator = 0;
-//	while(1) {
-//		i++ ;
-//		if(i%100000 == 0){
-//			if(onIndicator == 0){
-//				onIndicator = 1;
-//				pin0_gpio_toggle(11);
-//			}else{
-//				pin0_gpio_toggle(11);
-//				onIndicator = 0;
-//			}
-//		}
-//	}
-//}
+}
 
-//void blinkBetweenLEDsWithTimerUsingResetOnMatch(){
-//	setUpTimer0ForResetOnMatch();
-//	//TODO try 6000000
-//	LPC_TIM0->MR0 = 3000000;
-//
-//	int onIndicator = 0;
-//	while(1) {
-//		if(hasTIM0Rest() == 1){
-//			pin0_gpio_toggle(11);
-//			pin0_gpio_toggle(23);
-//			if(onIndicator == 0){
-//				led2_off();
-////				pin0_9_on();
-//				onIndicator = 1;
-//			}else{
-//				led2_on();
-////				pin0_9_off();
-//				onIndicator = 0;
-//			}
-//		}
-//	}
-//}
-
-//void blinkBetweenLEDsWithTimerUsingInteruptOnMatch(){
-//	setUpClk();
-//	setUpTimer0ForInteruptOnMatch();
-//	//TODO try 6000000
-//	LPC_TIM0->MR0 = 3000000;
-//
-//	int onIndicator = 0;
-//	while(1) {
-//		if(hasTIM0Rest() == 1){
-//			if(onIndicator == 0){
-//				led2_off();
-//				pin0_9_on();
-//				onIndicator = 1;
-//			}else{
-//				led2_on();
-//				pin0_9_off();
-//				onIndicator = 0;
-//			}
-//		}
-//	}
-//}
+void QEI_IRQHandler(void) {
+ // printf("%d, %d, %s\n", LPC_QEI->QEIVEL, LPC_QEI->QEICAP, "Speed to lowwwww");
+  //LPC_QEI->QEICLR = 0xff;
+// Clear all Interrupt pending
+  LPC_QEI->QEICLR = QEI_INTCLR_BITMASK;
+ // QEI_IntClear(LPC_QEI, QEI_INTFLAG_DIR_Int);
+}
 
 void initReactionDetection (void){
  //Inits and turns on reaction led.
@@ -330,7 +230,7 @@ void initReactionDetection (void){
  	//pin0_gpio_set(11,HIGH);
 
 	//Inits reaction detection ADC pin.
-	initADC(0);
+
 }
 
 //void init_LED2_with_TIMER3_to_blink_every_second (void){
@@ -339,105 +239,13 @@ void initReactionDetection (void){
 //	blinkBetweenLEDsWithTimerUsingResetOnMatch();
 //}
 
-void setupTIMER0_to_interupt_on_match(){
-	  // Set bits 2 and 3 of PCLKSEL0 to choose peripheral divider for TIMER0
-	  // Setting to 1 chooses no divider
-	  LPC_SC ->PCLKSEL0 = (1 << 2);
 
-	// Setup timer
-	  LPC_SC ->PCONP |= 1;		 // power for timer
-
-	  // No prescaling
-	  LPC_TIM0 ->PR = 0; // no prescalling for the peripheral clock in
-
-//	  LPC_TIM0 ->CCR = (0x1 << 0)  // Setting up the Capture for CAP.0 on rising edge
-//					 | (0x1 << 3)  // Setting up the Capture for CAP.1 on rising edge
-//					 | (0x1 << 2)  // Enable interrupt for CAP.0
-//					 | (0x1 << 5); // Enable interrupt for CAP.1
-
-	  // Interrupt and Reset on MR0 and MR1
-		  // Match Control Register
-		  //   1 in bit 0 - timer will trigger the interrupt when it matches
-		  //   1 in bit 1 - timer will automatically reset to 0 when it matches
-	  LPC_TIM0 ->MCR |= (1 << 0) | (1 << 1);
-
-	  // Disable timer
-	  LPC_TIM0 ->TCR = 0x02;
-
-	  // Match value
-	  LPC_TIM0 ->MR0 = 12000000;
-
-	  // Reset all interrupts
-	  LPC_TIM0 ->IR = 0xff;
-
-	  // Start timer
-	  LPC_TIM0 ->TCR = 1;
-
-	  NVIC_EnableIRQ(TIMER0_IRQn);
-}
 void initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0(){
 	pin0_gpio_init(OUTPUT, LED2);
 	//Timer will be set up to interrupt on match about every one second. Interupt above should toggle LED and clear interrupt.
 	setupTIMER0_to_interupt_on_match();
 }
 
-void init_both_RGB_LED_to_blink(){
-//	PINSEL_CFG_Type PinCfg;
-//
-//	PinCfg.Funcnum   = 0;
-//	PinCfg.OpenDrain = 0;
-//	PinCfg.Pinmode   = 0;
-//
-//	PinCfg.Pinnum    = LED_R1;
-//	PinCfg.Portnum   = 0;
-//	PINSEL_ConfigPin(&PinCfg);
-//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-//	//BELOW NOT WORKING SO DOING ANOTHER WAY
-//	GPIO_SetValue(PinCfg.Portnum, 1 << PinCfg.Pinnum);
-////		LPC_GPIO0 ->FIOSET3 = (1<<3);
-//
-//	PinCfg.Pinnum    = LED_B1;
-//	PinCfg.Portnum   = 0;
-//	PINSEL_ConfigPin(&PinCfg);
-//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-//	//BELOW NOT WORKING SO DOING ANOTHER WAY
-//	GPIO_SetValue(PinCfg.Portnum, 1 << PinCfg.Pinnum);
-////		LPC_GPIO0 ->FIOPIN3 |= (1<<4);
-//
-//	PinCfg.Pinnum    = LED_G1_p2;
-//	PinCfg.Portnum   = 2;
-//	PINSEL_ConfigPin(&PinCfg);
-//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
-//
-//
-//	PinCfg.Pinnum    = LED_R2;
-//	PinCfg.Portnum   = 0;
-//	PINSEL_ConfigPin(&PinCfg);
-//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-//
-//	PinCfg.Pinnum    = LED_B2;
-//	PinCfg.Portnum   = 0;
-//	PINSEL_ConfigPin(&PinCfg);
-//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
-//
-//
-//	PinCfg.Pinnum    = LED_G2;
-//	PinCfg.Portnum   = 0;
-//	PINSEL_ConfigPin(&PinCfg);
-//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
-//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
-
-// //OLD WAY OF INITING RGB LEDS
-	pin0_gpio_init(OUTPUT, LED_R1);
-	pin0_gpio_init(OUTPUT, LED_B1);
-	pin2_gpio_init(OUTPUT, LED_G1_p2); //Must be pin 2!
-
-	pin0_gpio_init(OUTPUT, LED_R2);
-	pin0_gpio_init(OUTPUT, LED_B2);
-	pin0_gpio_init(OUTPUT, LED_G2);
-}
 
 //void init_button_press_detection_george(void){
 //	  LPC_SC ->CLKSRCSEL = 1;   // Select main clock source
@@ -514,10 +322,10 @@ void init_both_SEVEN_SEGMENT_DISPLAY_pins(){
 
 void init_pwm_mixer(){
 	PWM_Init(1,6,100);											//Initialize PWM port 6
-	PWM_Start(1);												//Start PWM
+	//PWM_Start(1);												//Start PWM
 
 	//TODO ensure this does not cause issues with Debug LED
-	TimerInit(0, 100);											//Initialize timer
+	TimerInit(1, 100);											//Initialize timer
 
 	int pwmoffset = 0;											//Declare pwmoffset as integer
 
@@ -535,9 +343,106 @@ void init_pwm_mixer(){
 //   }
 }
 
-void init_timer1(){
-	timer
+void init_pwm_motor_controller(){
+
+	LPC_SC ->PCONP |= 18;
+	LPC_PINCON->PINSEL3 |= (1 << 6);
+	LPC_PINCON->PINSEL3 &= ~(1 << 7);
+
+	//PWM_Init(1,5,100);											//Initialize PWM port 5
+
+		switch (5) {
+
+			case 1:
+				LPC_PINCON->PINSEL4 |= (01 << 0);
+				break;
+
+			case 2:
+				LPC_PINCON->PINSEL4 |= (01 << 2);
+				break;
+
+			case 3:
+				LPC_PINCON->PINSEL4 |= (01 << 4);
+				break;
+
+			case 4:
+				LPC_PINCON->PINSEL4 |= (01 << 6);
+				break;
+
+			case 5:
+				LPC_PINCON->PINSEL4 |= (01 << 8);
+				break;
+
+			case 6:
+				LPC_PINCON->PINSEL4 |= (01 << 10);
+				break;
+		}
+
+
+		LPC_PWM1->TCR = TCR_RESET;	/* Counter Reset */
+		LPC_PWM1->PR = 0x00;		/* count frequency:Fpclk */
+		LPC_PWM1->MCR = PWMMR5I;	/* interrupt on PWMMR0, reset on PWMMR0, reset
+									TC if PWM matches */
+		LPC_PWM1->MR5 = 100;		/* set PWM cycle */
+		/* all PWM latch enabled */
+
+		//TODO Change to only set PWM1.1 and PWM1.5
+		LPC_PWM1->LER = LER0_EN | LER1_EN | LER2_EN | LER3_EN | LER4_EN | LER5_EN | LER6_EN;
+
+	PWM_Start(1);												//Start PWM
+
+	//TODO ensure this does not cause issues with Debug LED
+	//TimerInit(1, 100);											//Initialize timer
+
+	int pwmoffset = 0;											//Declare pwmoffset as integer
+
 }
+
+void init_encoder(){
+	LPC_SC ->PCONP |= 18;
+	LPC_SC ->PCLKSEL1 |= (1 << 0);
+	LPC_SC ->PCLKSEL1 &= ~(1 << 1);
+
+	LPC_PINCON->PINSEL3 |= (1 << PHASE_A);
+    LPC_PINCON->PINSEL3 &= ~(1 << PHASE_A+1);
+
+	LPC_PINCON->PINSEL3 |= (1 << PHASE_B);
+    LPC_PINCON->PINSEL3 &= ~(1 << PHASE_B+1);
+
+	LPC_PINCON->PINSEL3 |= (1 << INDEX);
+    LPC_PINCON->PINSEL3 &= ~(1 << INDEX+1);
+
+    //LPC_QEI->QEICONF |= (1 << 1);
+
+//    typedef struct {
+//    	uint32_t DirectionInvert	:1; 	/**< Direction invert option:
+//    										- QEI_DIRINV_NONE: QEI Direction is normal
+//    										- QEI_DIRINV_CMPL: QEI Direction is complemented
+//    										*/
+//    	uint32_t SignalMode			:1; 	/**< Signal mode Option:
+//    										- QEI_SIGNALMODE_QUAD: Signal is in Quadrature phase mode
+//    										- QEI_SIGNALMODE_CLKDIR: Signal is in Clock/Direction mode
+//    										*/
+//    	uint32_t CaptureMode		:1;		/**< Capture Mode Option:
+//    										- QEI_CAPMODE_2X: Only Phase-A edges are counted (2X)
+//    										- QEI_CAPMODE_4X: BOTH Phase-A and Phase-B edges are counted (4X)
+//    										*/
+//    	uint32_t InvertIndex		:1; 	/**< Invert Index Option:
+//    										- QEI_INVINX_NONE: the sense of the index input is normal
+//    										- QEI_INVINX_EN: inverts the sense of the index input
+//    										*/
+//    } QEI_CFG_Type;
+
+    QEI_CFG_Type qei_parm = {QEI_DIRINV_NONE, QEI_SIGNALMODE_QUAD, QEI_CAPMODE_4X, QEI_INVINX_NONE};
+    QEI_Init(LPC_QEI, &qei_parm);
+
+
+
+    LPC_QEI->VELCOMP = 2000000; // velocity compare number
+    LPC_QEI-> QEIIES |= (1 << 2); // set interupt on low velocity
+    NVIC_EnableIRQ(QEI_IRQn);
+}
+
 
 void init(void){
 	//Sets up CPU and perh clock to be main with no divs
@@ -547,44 +452,32 @@ void init(void){
 	//Set up debug blinking led.
 	initAndBlinkOnBoardLED2OnMatchWithInteruptWithTimer0();
 	//TODO need to determine what macros are failing to get each to RGB LED to blink. RGB LED 2 is working. Need to check RGB led 1. Now only green comes on when red should.
-	init_both_RGB_LED_to_blink();
-
-	//TODO int 2nd seven segment and use them
-	init_both_SEVEN_SEGMENT_DISPLAY_pins();
-
-//	int i = 0;
-//	//for(i = 0; i <= 9; i++){
-//		display(3,FALSE);
-//	//	short_delay(2000);
-//	//}
-	//This will setup and use Timer0
-	//TODO remove from interupt all the RGG Blinking function!!!!!
+	init_both_RGB_LEDs();
 
 	//inits and set reaction LED to high. Sets up reaction detection with ADC pin.
 	initReactionDetection();
 
-	init_timer1();
+	initADC(0);
+
 	init_button_press_detection();
 
 	init_pwm_mixer();
 
+	//c_entry();
+	init_encoder();
+
+	//init_pwm_motor_controller();
+
 	alpha_init();
-	alpha_display('0');
+	disp[1] = '8';
 
-	//MANY NOT BE WORKING ANYMORE
-	//blinkBetweenLEDsWithSimpleCounter();
-	//	blinkLED2WithTimer3UsingResetOnMatch();
-	//	blinkBetweenLEDsWithTimerUsingResetOnMatch();
-
-	//blinks on board LED2 to ensure microprocessor is running
-	//setUpTimer3ToToggle_pin0_10_OnMatch();;
 }
 int main(void) {
 
 	init();
 	//Will ideal here and wait for interupts
 	while(1) {
-		idealLoops++;
+		idleLoops++;
 	}
 	return 0;
 }

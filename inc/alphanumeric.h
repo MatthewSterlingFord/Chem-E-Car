@@ -13,7 +13,7 @@
 #endif
 
 void alpha_init();
-void alpha_display(char c);
+void alpha_display(char c, int digit, int dp);
 void alpha_dot_on();
 void alpha_dot_off();
 

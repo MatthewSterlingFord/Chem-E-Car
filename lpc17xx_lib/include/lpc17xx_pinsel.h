@@ -155,8 +155,8 @@ typedef struct
 	uint8_t OpenDrain;	/**< OpenDrain mode, should be:
 						- PINSEL_PINMODE_NORMAL: Pin is in the normal (not open drain) mode
 						- PINSEL_PINMODE_OPENDRAIN: Pin is in the open drain mode */
-} PINSEL_CFG_Type;
 
+} PINSEL_CFG_Type;
 /**
  * @}
  */

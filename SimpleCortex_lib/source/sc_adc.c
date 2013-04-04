@@ -178,22 +178,24 @@ void ADCInit( uint32_t ADC_Clk )
   /* all the related pins are set to ADC inputs, AD0.0~7 */
   //Makes p0.23 to be in ADC mode (01)
   LPC_PINCON->PINSEL1 |= 1 << 14; //sets bit 14 to 1
-  LPC_PINCON->PINSEL1 &= ~(1 << 15); //sets bit 15 to 0
+  LPC_PINCON->PINSEL1 &= ~(1 << 15); //sets bit 15 to
 
   //  LPC_PINCON->PINSEL0 &= ~0x000000F0;	/* P0.2~3, A0.6~7, function 10 */
 //
 //  LPC_PINCON->PINSEL0 |= 0x000000A0;
 //  LPC_PINCON->PINSEL1 &= ~0x003FC000;	/* P0.23~26, A0.0~3, function 01 */
 //  LPC_PINCON->PINSEL1 |= 0x00154000;
-//  LPC_PINCON->PINSEL3 |= 0xF0000000;	/* P1.30~31, A0.4~5, function 11 */
+  LPC_PINCON->PINSEL3 |= 0xF0000000;	/* P1.30~31, A0.4~5, function 11 */
 
   /* No pull-up no pull-down (function 10) on these ADC pins. */
 //  LPC_PINCON->PINMODE0 &= ~0x000000F0;
 //  LPC_PINCON->PINMODE0 |= 0x000000A0;
 //  LPC_PINCON->PINMODE1 &= ~0x003FC000;
 //  LPC_PINCON->PINMODE1 |= 0x002A8000;
-//  LPC_PINCON->PINMODE3 &= ~0xF0000000;
-//  LPC_PINCON->PINMODE3 |= 0xA0000000;
+
+
+  LPC_PINCON->PINMODE3 &= ~0xF0000000;
+  LPC_PINCON->PINMODE3 |= 0xA0000000;
 
   //Makes p0.23 to be in NO PULL DOWN OR UP mode (10)
   LPC_PINCON->PINMODE1 &= ~(1 << 14); //sets bit 14 to 0
@@ -222,13 +224,13 @@ void ADCInit( uint32_t ADC_Clk )
 	break;
   }
 
-  LPC_ADC->ADCR = ( 0x01 << 0 ) |  /* SEL=1,select channel 0~7 on ADC0 */
-		( ( pclk  / ADC_Clk - 1 ) << 8 ) |  /* CLKDIV = Fpclk / ADC_Clk - 1 */ 
+  LPC_ADC->ADCR = (25 << 0 ) |  /* Turns on 4, 5, 1 SEL=1,select channel 0~7 on ADC0 */
+		( ( pclk  / ADC_Clk - 1 ) << 8 ) |  /* CLKDIV = Fpclk / ADC_Clk - 1 */
 		( 0 << 16 ) | 		/* BURST = 0, no BURST, software controlled */
 		( 0 << 17 ) |  		/* CLKS = 0, 11 clocks/10 bits */
 		( 1 << 21 ) |  		/* PDN = 1, normal operation */
 		( 0 << 24 ) |  		/* START = 0 A/D conversion stops */
-		( 0 << 27 );		/* EDGE = 0 (CAP/MAT singal falling,trigger A/D conversion) */ 
+		( 0 << 27 );		/* EDGE = 0 (CAP/MAT singal falling,trigger A/D conversion) */
 
   //LPC_ADC->ADCR = & //( 0x01 << 0 ) |  /* SEL=1,select channel 0~7 on ADC0 */
   //		( ( pclk  / ADC_Clk - 1 ) << 8 ) |  /* CLKDIV = Fpclk / ADC_Clk - 1 */
@@ -243,7 +245,9 @@ void ADCInit( uint32_t ADC_Clk )
 //#if ADC_INTERRUPT_FLAG
   NVIC_EnableIRQ(ADC_IRQn);
 //#if BURST_MODE
-  LPC_ADC->ADINTEN = 0x1;		/* Enable all interrupts */
+  LPC_ADC->ADINTEN |= 0x1;		/* Enable interrupt 1 */
+  LPC_ADC->ADINTEN |= 0x1 << 3;		/* Enable interrupts 3*/
+  LPC_ADC->ADINTEN |= 0x1 << 4;		/* Enable interrupts 4*/
 //#else
 //  LPC_ADC->ADINTEN = 0x1FF;		/* Enable all interrupts */
 //#endif

@@ -76,30 +76,105 @@ void setUpTimer3ToToggle_pin0_10_OnMatch(){
 	 // functions for each pin.)
 }
 
-void setUpTimer0ForInteruptOnMatch(void)
-{
-	// Turn on timer 0
-	BITON(LPC_SC->PCONP,0);
+//void setUpTimer0ForInteruptOnMatch(void)
+//{
+//	// Turn on timer 0
+//	BITON(LPC_SC->PCONP,0);
+//
+//	// Reset Timer
+//	LPC_TIM0->TCR = 0x2;
+//
+//	// Set t0 to take the not scaling the input of clock signal
+//	// LPC_SC->PCLKSEL0 |= 1 << 2;
+//	SETBITS(LPC_SC->PCLKSEL0,0,2,0x01);
+//
+//
+//
+//	// No prescale (pg 495)
+//	LPC_TIM0->PR = 0x0;
+//	LPC_TIM0->PC = 0x0;
+//
+//	//makes it reset on match
+//	LPC_TIM0->MCR = 0x2;
+//
+//	//TODO try 6000000
+//	LPC_TIM0->MR0 = 60000;
+//
+//	// Enable Timer
+//	LPC_TIM0->TCR = 0x01;
+//}
 
-	// Reset Timer
-	LPC_TIM0->TCR = 0x2;
+void setupTIMER0_to_interupt_on_match(){
+	  // Set bits 2 and 3 of PCLKSEL0 to choose peripheral divider for TIMER0
+	  // Setting to 1 chooses no divider
+	  LPC_SC ->PCLKSEL0 |= (1 << 2);
+	  LPC_SC ->PCLKSEL0 &= ~(1 << 3);
 
-	// Set t0 to take the not scaling the input of clock signal
-	// LPC_SC->PCLKSEL0 |= 1 << 2;
-	SETBITS(LPC_SC->PCLKSEL0,0,2,0x01);
+	// Setup timer
+	  LPC_SC ->PCONP |= 1;		 // power for timer
 
+	  // No prescaling
+	  LPC_TIM0 ->PR = 0; // no prescalling for the peripheral clock in
 
+//	  LPC_TIM0 ->CCR = (0x1 << 0)  // Setting up the Capture for CAP.0 on rising edge
+//					 | (0x1 << 3)  // Setting up the Capture for CAP.1 on rising edge
+//					 | (0x1 << 2)  // Enable interrupt for CAP.0
+//					 | (0x1 << 5); // Enable interrupt for CAP.1
 
-	// No prescale (pg 495)
-	LPC_TIM0->PR = 0x0;
-	LPC_TIM0->PC = 0x0;
+	  // Interrupt and Reset on MR0 and MR1
+		  // Match Control Register
+		  //   1 in bit 0 - timer will trigger the interrupt when it matches
+		  //   1 in bit 1 - timer will automatically reset to 0 when it matches
+	  LPC_TIM0 ->MCR |= (1 << 0) | (1 << 1);
 
-	//makes it reset on match
-	LPC_TIM0->MCR = 0x2;
+	  // Disable timer
+	  LPC_TIM0 ->TCR = 0x02;
 
-	//TODO try 6000000
-	LPC_TIM0->MR0 = 6000000;
+	  // Match value
+	  LPC_TIM0 ->MR0 = 12000;
 
-	// Enable Timer
-	LPC_TIM0->TCR = 0x01;
+	  // Reset all interrupts
+	  LPC_TIM0 ->IR = 0xff;
+
+	  // Start timer
+	  LPC_TIM0 ->TCR = 1;
+
+	  NVIC_EnableIRQ(TIMER0_IRQn);
+}
+
+void setupTIMER3_to_interupt_on_match(){
+	  // Set bits 2 and 3 of PCLKSEL0 to choose peripheral divider for TIMER0
+	  // Setting to 1 chooses no divider
+	  LPC_SC ->PCLKSEL1 = (1 << 2);
+
+	// Setup timer
+	  LPC_SC ->PCONP |= 1;		 // power for timer
+
+	  // No prescaling
+	  LPC_TIM0 ->PR = 0; // no prescalling for the peripheral clock in
+
+//	  LPC_TIM0 ->CCR = (0x1 << 0)  // Setting up the Capture for CAP.0 on rising edge
+//					 | (0x1 << 3)  // Setting up the Capture for CAP.1 on rising edge
+//					 | (0x1 << 2)  // Enable interrupt for CAP.0
+//					 | (0x1 << 5); // Enable interrupt for CAP.1
+
+	  // Interrupt and Reset on MR0 and MR1
+		  // Match Control Register
+		  //   1 in bit 0 - timer will trigger the interrupt when it matches
+		  //   1 in bit 1 - timer will automatically reset to 0 when it matches
+	  LPC_TIM0 ->MCR |= (1 << 0) | (1 << 1);
+
+	  // Disable timer
+	  LPC_TIM0 ->TCR = 0x02;
+
+	  // Match value
+	  LPC_TIM0 ->MR0 = 12000000;
+
+	  // Reset all interrupts
+	  LPC_TIM0 ->IR = 0xff;
+
+	  // Start timer
+	  LPC_TIM0 ->TCR = 1;
+
+	  NVIC_EnableIRQ(TIMER0_IRQn);
 }

@@ -77,3 +77,62 @@ void pin2_gpio_toggle (int pinNumber)
 	//XOR s the pinNumber bit
 	LPC_GPIO2 -> FIOPIN ^= (1<<pinNumber);
 }
+
+void init_both_RGB_LEDs(){
+//	PINSEL_CFG_Type PinCfg;
+//
+//	PinCfg.Funcnum   = 0;
+//	PinCfg.OpenDrain = 0;
+//	PinCfg.Pinmode   = 0;
+//
+//	PinCfg.Pinnum    = LED_R1;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	//BELOW NOT WORKING SO DOING ANOTHER WAY
+//	GPIO_SetValue(PinCfg.Portnum, 1 << PinCfg.Pinnum);
+////		LPC_GPIO0 ->FIOSET3 = (1<<3);
+//
+//	PinCfg.Pinnum    = LED_B1;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	//BELOW NOT WORKING SO DOING ANOTHER WAY
+//	GPIO_SetValue(PinCfg.Portnum, 1 << PinCfg.Pinnum);
+////		LPC_GPIO0 ->FIOPIN3 |= (1<<4);
+//
+//	PinCfg.Pinnum    = LED_G1_p2;
+//	PinCfg.Portnum   = 2;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+//
+//
+//	PinCfg.Pinnum    = LED_R2;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//
+//	PinCfg.Pinnum    = LED_B2;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+//
+//
+//	PinCfg.Pinnum    = LED_G2;
+//	PinCfg.Portnum   = 0;
+//	PINSEL_ConfigPin(&PinCfg);
+//	GPIO_SetDir(PinCfg.Portnum, 1 << PinCfg.Pinnum, OUTPUT);
+//	GPIOSetValue(PinCfg.Portnum, PinCfg.Pinnum, HIGH);
+
+// //OLD WAY OF INITING RGB LEDS
+	pin0_gpio_init(OUTPUT, LED_R1);
+	pin0_gpio_init(OUTPUT, LED_B1);
+	pin2_gpio_init(OUTPUT, LED_G1_p2); //Must be pin 2!
+
+	pin0_gpio_init(OUTPUT, LED_R2);
+	pin0_gpio_init(OUTPUT, LED_B2);
+	pin0_gpio_init(OUTPUT, LED_G2);
+}
+

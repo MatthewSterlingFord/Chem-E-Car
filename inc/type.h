@@ -18,6 +18,9 @@
 #define NULL    ((void *)0)
 #endif
 
+// For displaying. 0-3 mean digits 1, 2, 3, 4
+// dots is just the array for showing the decimal point or not
+
 //#ifndef FALSE
 //#define FALSE   (0)
 //#endif
@@ -96,6 +99,38 @@
 
 #ifndef BOTTOM_SEG_1
 #define BOTTOM_SEG_1   (10)
+#endif
+
+#ifndef DOT_SEG_1
+#define DOT_SEG_1   (1)
+#endif
+
+#ifndef ANODE_1
+#define ANODE_1   (16)
+#endif
+
+#ifndef ANODE_2
+#define ANODE_2   (15)
+#endif
+
+#ifndef ANODE_3
+#define ANODE_3   (17)
+#endif
+
+#ifndef ANODE_4
+#define ANODE_4   (18)
+#endif
+
+#ifndef INDEX
+#define INDEX   (24)
+#endif
+
+#ifndef PHASE_A
+#define PHASE_A   (20)
+#endif
+
+#ifndef PHASE_B
+#define PHASE_B   (23)
 #endif
 
 //#ifndef SEVEN_SEG_DATA_INPUT_1
