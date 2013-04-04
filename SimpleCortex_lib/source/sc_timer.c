@@ -41,6 +41,227 @@ volatile uint32_t timer1_capture1 = 0;
 volatile uint32_t timer2_capture1 = 0;
 volatile uint32_t timer3_capture1 = 0;
 
+//FROM PWMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+ 	 	 	 //mmmmmmmmmmmmmmmmmm
+/******************************************************************************
+** Function name:		init_timer
+**
+** Descriptions:		Initialize timer, set timer interval, reset timer,
+**						install timer interrupt handler
+**
+** parameters:			timer number and timer interval
+** Returned value:		true or false, if the interrupt handler can't be
+**						installed, return false.
+**
+******************************************************************************/
+uint32_t TimerInit( uint8_t timer_num, uint32_t TimerInterval )
+{
+  uint32_t pclkdiv, pclk;
+
+  if ( timer_num == 0 )
+  {
+	timer0_m0_counter = 0;
+	timer0_m1_counter = 0;
+	timer0_capture0 = 0;
+	timer0_capture1 = 0;
+	LPC_SC->PCONP |= (0x01<<1);
+#if TIMER_MATCH
+	LPC_PINCON->PINSEL3 &= ~((0x3<<24)|(0x3<<26));
+	LPC_PINCON->PINSEL3 |= ((0x3<<24)|(0x3<<26));
+#else
+	LPC_PINCON->PINSEL3 &= ~((0x3<<20)|(0x3<<22));
+	LPC_PINCON->PINSEL3 |= ((0x3<<20)|(0x3<<22));
+#endif
+	LPC_TIM0->IR = 0x0F;          /* Clear MATx interrupt include DMA request */
+
+	/* By default, the PCLKSELx value is zero, thus, the PCLK for
+	all the peripherals is 1/4 of the SystemCoreClock. */
+	/* Bit 2~3 is for TIMER0 */
+	pclkdiv = (LPC_SC->PCLKSEL0 >> 2) & 0x03;
+	switch ( pclkdiv )
+	{
+	  case 0x00:
+	  default:
+		pclk = SystemCoreClock/4;
+		break;
+	  case 0x01:
+		pclk = SystemCoreClock;
+		break;
+	  case 0x02:
+		pclk = SystemCoreClock/2;
+		break;
+	  case 0x03:
+		pclk = SystemCoreClock/8;
+		break;
+	}
+	LPC_TIM0->PR  = 0;
+
+	LPC_TIM0->MR0 = TimerInterval/4;
+	LPC_TIM0->MR1 = TimerInterval/4;
+#if TIMER_MATCH
+	LPC_TIM0->EMR &= ~(0xFF<<4);
+	LPC_TIM0->EMR |= ((0x3<<4)|(0x3<<6));
+#else
+	/* Capture 0 and 1 on rising edge, interrupt enable. */
+	LPC_TIM0->CCR = (0x1<<0)|(0x1<<2)|(0x1<<3)|(0x1<<5);
+#endif
+	LPC_TIM0->MCR = (0x3<<0)|(0x3<<3);	/* Interrupt and Reset on MR0 and MR1 */
+	NVIC_EnableIRQ(TIMER0_IRQn);
+	return (TRUE);
+  }
+  else if ( timer_num == 1 )
+  {
+	timer1_m0_counter = 0;
+	timer1_m1_counter = 0;
+	timer1_capture0 = 0;
+	timer1_capture1 = 0;
+	LPC_SC->PCONP |= (0x1<<2);
+#if TIMER_MATCH
+	LPC_PINCON->PINSEL3 &= ~((0x3<<12)|(0x3<<18));
+	LPC_PINCON->PINSEL3 |= ((0x3<<12)|(0x3<<18));
+#else
+	LPC_PINCON->PINSEL3 &= ~((0x3<<4)|(0x3<<6));
+	LPC_PINCON->PINSEL3 |= ((0x3<<4)|(0x3<<6));
+#endif
+	LPC_TIM1->IR = 0x0F;          /* Clear MATx interrupt include DMA request */
+	/* By default, the PCLKSELx value is zero, thus, the PCLK for
+	all the peripherals is 1/4 of the SystemCoreClock. */
+	/* Bit 4~5 is for TIMER0 */
+	pclkdiv = (LPC_SC->PCLKSEL0 >> 4) & 0x03;
+	switch ( pclkdiv )
+	{
+	  case 0x00:
+	  default:
+		pclk = SystemCoreClock/4;
+		break;
+	  case 0x01:
+		pclk = SystemCoreClock;
+		break;
+	  case 0x02:
+		pclk = SystemCoreClock/2;
+		break;
+	  case 0x03:
+		pclk = SystemCoreClock/8;
+		break;
+	}
+	LPC_TIM1->PR  = 0;
+	LPC_TIM1->MR0 = TimerInterval/4;
+	LPC_TIM1->MR1 = TimerInterval/4;
+#if TIMER_MATCH
+	LPC_TIM1->EMR &= ~(0xFF<<4);
+	LPC_TIM1->EMR |= ((0x3<<4)|(0x3<<6));
+#else
+	/* Capture 0/1 on rising edge, interrupt enable. */
+	LPC_TIM1->CCR = (0x1<<0)|(0x1<<2)|(0x1<<3)|(0x1<<5);
+#endif
+	LPC_TIM1->MCR = (0x3<<0)|(0x3<<3);	/* Interrupt and Reset on MR0 and MR1 */
+	NVIC_EnableIRQ(TIMER1_IRQn);
+	return (TRUE);
+  }
+
+  else if ( timer_num == 2 )
+    {
+  	timer2_m0_counter = 0;
+  	timer2_m1_counter = 0;
+  	timer2_capture0 = 0;
+  	timer2_capture1 = 0;
+  	LPC_SC->PCONP |= (0x1<<22);
+  #if TIMER_MATCH
+  	LPC_PINCON->PINSEL3 &= ~((0x3<<12)|(0x3<<18));
+  	LPC_PINCON->PINSEL3 |= ((0x3<<12)|(0x3<<18));
+  #else
+  	LPC_PINCON->PINSEL3 &= ~((0x3<<4)|(0x3<<6));
+  	LPC_PINCON->PINSEL3 |= ((0x3<<4)|(0x3<<6));
+  #endif
+  	LPC_TIM2->IR = 0x0F;          /* Clear MATx interrupt include DMA request */
+  	/* By default, the PCLKSELx value is zero, thus, the PCLK for
+  	all the peripherals is 1/4 of the SystemCoreClock. */
+  	/* Bit 12~13 is for TIMER2 */
+  	pclkdiv = (LPC_SC->PCLKSEL1 >> 12) & 0x03;
+  	switch ( pclkdiv )
+  	{
+  	  case 0x00:
+  	  default:
+  		pclk = SystemCoreClock/4;
+  		break;
+  	  case 0x01:
+  		pclk = SystemCoreClock;
+  		break;
+  	  case 0x02:
+  		pclk = SystemCoreClock/2;
+  		break;
+  	  case 0x03:
+  		pclk = SystemCoreClock/8;
+  		break;
+  	}
+  	LPC_TIM2->PR  = 0;
+  	LPC_TIM2->MR0 = TimerInterval/4;
+  	LPC_TIM2->MR1 = TimerInterval/4;
+  #if TIMER_MATCH
+  	LPC_TIM2->EMR &= ~(0xFF<<4);
+  	LPC_TIM2->EMR |= ((0x3<<4)|(0x3<<6));
+  #else
+  	/* Capture 0/1 on rising edge, interrupt enable. */
+  	LPC_TIM2->CCR = (0x1<<0)|(0x1<<2)|(0x1<<3)|(0x1<<5);
+  #endif
+  	LPC_TIM2->MCR = (0x3<<0)|(0x3<<3);	/* Interrupt and Reset on MR0 and MR1 */
+  	NVIC_EnableIRQ(TIMER2_IRQn);
+  	return (TRUE);
+    }
+
+  else if ( timer_num == 3 )
+    {
+  	timer3_m0_counter = 0;
+  	timer3_m1_counter = 0;
+  	timer3_capture0 = 0;
+  	timer3_capture1 = 0;
+  	LPC_SC->PCONP |= (0x1<<23);
+  #if TIMER_MATCH
+  	LPC_PINCON->PINSEL3 &= ~((0x3<<12)|(0x3<<18));
+  	LPC_PINCON->PINSEL3 |= ((0x3<<12)|(0x3<<18));
+  #else
+  	LPC_PINCON->PINSEL3 &= ~((0x3<<4)|(0x3<<6));
+  	LPC_PINCON->PINSEL3 |= ((0x3<<4)|(0x3<<6));
+  #endif
+  	LPC_TIM3->IR = 0x0F;          /* Clear MATx interrupt include DMA request */
+  	/* By default, the PCLKSELx value is zero, thus, the PCLK for
+  	all the peripherals is 1/4 of the SystemCoreClock. */
+  	/* Bit 14~15 is for TIMER3 */
+  	pclkdiv = (LPC_SC->PCLKSEL1 >> 14) & 0x03;
+  	switch ( pclkdiv )
+  	{
+  	  case 0x00:
+  	  default:
+  		pclk = SystemCoreClock/4;
+  		break;
+  	  case 0x01:
+  		pclk = SystemCoreClock;
+  		break;
+  	  case 0x02:
+  		pclk = SystemCoreClock/2;
+  		break;
+  	  case 0x03:
+  		pclk = SystemCoreClock/8;
+  		break;
+  	}
+  	LPC_TIM3->PR  = 0;
+  	LPC_TIM3->MR0 = TimerInterval/4;
+  	LPC_TIM3->MR1 = TimerInterval/4;
+  #if TIMER_MATCH
+  	LPC_TIM3->EMR &= ~(0xFF<<4);
+  	LPC_TIM3->EMR |= ((0x3<<4)|(0x3<<6));
+  #else
+  	/* Capture 0/1 on rising edge, interrupt enable. */
+  	LPC_TIM3->CCR = (0x1<<0)|(0x1<<2)|(0x1<<3)|(0x1<<5);
+  #endif
+  	LPC_TIM3->MCR = (0x3<<0)|(0x3<<3);	/* Interrupt and Reset on MR0 and MR1 */
+  	NVIC_EnableIRQ(TIMER3_IRQn);
+  	return (TRUE);
+    }
+
+  return (FALSE);
+}
+
 /*****************************************************************************
 ** Function name:		delayMs
 **

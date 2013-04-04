@@ -22,7 +22,7 @@
 
 /* In DMA mode, BURST mode and ADC_INTERRUPT flag need to be set. */
 /* In BURST mode, ADC_INTERRUPT need to be set. */
-#define ADC_INTERRUPT_FLAG	0	/* 1 is interrupt driven, 0 is polling */
+#define ADC_INTERRUPT_FLAG	1	/* 1 is interrupt driven, 0 is polling */
 #define BURST_MODE			1   /* Burst mode works in interrupt driven mode only. */
 #define ADC_DEBUG			1
 

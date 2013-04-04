@@ -31,6 +31,11 @@ set timer as MATx instead of CAPx. */
 
 #define TIME_INTERVAL	(9000000/100 - 1)
 
+
+//FROM PWMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+ 	 	 	 //mmmmmmmmmmmmmmmmmm
+extern uint32_t TimerInit( uint8_t timer_num, uint32_t timerInterval );
+
 extern void delayMs(uint8_t timer_num, uint32_t delayInMs);
 extern uint32_t init_timer( uint8_t timer_num, uint32_t timerInterval );
 extern void enable_timer( uint8_t timer_num );

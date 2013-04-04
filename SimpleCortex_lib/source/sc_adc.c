@@ -47,111 +47,111 @@ volatile uint32_t channel_flag = 0;
 ** Returned value:		None
 ** 
 ******************************************************************************/
-void ADC_IRQHandler (void) 
-{
-  uint32_t regVal;
-  volatile uint32_t dummy;
-  int i;
-  
-  regVal = LPC_ADC->ADSTAT;		/* Read ADC will clear the interrupt */
-  if ( regVal & 0x0000FF00 )	/* check OVERRUN error first */
-  {
-	OverRunCounter++;
-  	for ( i = 0; i < ADC_NUM; i++ )
-  	{
-  	  regVal = (regVal & 0x0000FF00) >> 0x08;
-  	  /* if overrun, just read ADDR to clear */
-  	  /* regVal variable has been reused. */
-      if ( regVal & _BV(i) )
-  	  {
-        //dummy = LPC_ADC->ADDR[i]; for cmsis2
-
-        switch (i) {
-			case 0:
-				dummy = LPC_ADC->ADDR0;
-				break;
-			case 1:
-				dummy = LPC_ADC->ADDR1;
-				break;
-			case 2:
-				dummy = LPC_ADC->ADDR2;
-				break;
-			case 3:
-				dummy = LPC_ADC->ADDR3;
-				break;
-			case 4:
-				dummy = LPC_ADC->ADDR4;
-				break;
-			case 5:
-				dummy = LPC_ADC->ADDR5;
-				break;
-			case 6:
-				dummy = LPC_ADC->ADDR6;
-				break;
-			case 7:
-				dummy = LPC_ADC->ADDR7;
-				break;
-		}
-
-  	  }
-  	}
-	LPC_ADC->ADCR &= ~((0x7<<24)|(0x1<<16));	/* stop ADC now, turn off BURST bit. */
-  	ADCIntDone = 1;
-  	return;	
-  }
-
-  for ( i = 0; i < ADC_NUM; i++ )
-  {
-    if ( regVal & _BV(i) )
-	{
-    	uint32_t adcbuf = 0;
-        switch (i) {
- 			case 0:
- 				adcbuf = LPC_ADC->ADDR0;
- 				break;
- 			case 1:
- 				adcbuf = LPC_ADC->ADDR1;
- 				break;
- 			case 2:
- 				adcbuf = LPC_ADC->ADDR2;
- 				break;
- 			case 3:
- 				adcbuf = LPC_ADC->ADDR3;
- 				break;
- 			case 4:
- 				adcbuf = LPC_ADC->ADDR4;
- 				break;
- 			case 5:
- 				adcbuf = LPC_ADC->ADDR5;
- 				break;
- 			case 6:
- 				adcbuf = LPC_ADC->ADDR6;
- 				break;
- 			case 7:
- 				adcbuf = LPC_ADC->ADDR7;
- 				break;
- 		}
-	  ADCValue[i] = ( adcbuf >> 4 ) & 0xFFF;
-	}
-  }
-
-#if BURST_MODE
-  BurstCounter++;
-  channel_flag |= (regVal & 0xFF);
-  if ( (channel_flag & 0xFF) == 0xFF )
-  {
-	/* All the bits in have been set, it indicates all the ADC 
-	channels have been converted. */
-	LPC_ADC->ADCR &= ~(0x1<<16);	/* Clear BURST mode, stop ADC now */
-  	channel_flag = 0; 
-	ADCIntDone = 1;
-  }
-#else
-  LPC_ADC->CR &= ~(0x7<<24);	/* stop ADC now */ 
-  ADCIntDone = 1;
-#endif
-  return;
-}
+//void ADC_IRQHandler (void)
+//{
+//  uint32_t regVal;
+//  volatile uint32_t dummy;
+//  int i;
+//
+//  regVal = LPC_ADC->ADSTAT;		/* Read ADC will clear the interrupt */
+//  if ( regVal & 0x0000FF00 )	/* check OVERRUN error first */
+//  {
+//	OverRunCounter++;
+//  	for ( i = 0; i < ADC_NUM; i++ )
+//  	{
+//  	  regVal = (regVal & 0x0000FF00) >> 0x08;
+//  	  /* if overrun, just read ADDR to clear */
+//  	  /* regVal variable has been reused. */
+//      if ( regVal & _BV(i) )
+//  	  {
+//        //dummy = LPC_ADC->ADDR[i]; for cmsis2
+//
+//        switch (i) {
+//			case 0:
+//				dummy = LPC_ADC->ADDR0;
+//				break;
+//			case 1:
+//				dummy = LPC_ADC->ADDR1;
+//				break;
+//			case 2:
+//				dummy = LPC_ADC->ADDR2;
+//				break;
+//			case 3:
+//				dummy = LPC_ADC->ADDR3;
+//				break;
+//			case 4:
+//				dummy = LPC_ADC->ADDR4;
+//				break;
+//			case 5:
+//				dummy = LPC_ADC->ADDR5;
+//				break;
+//			case 6:
+//				dummy = LPC_ADC->ADDR6;
+//				break;
+//			case 7:
+//				dummy = LPC_ADC->ADDR7;
+//				break;
+//		}
+//
+//  	  }
+//  	}
+//	LPC_ADC->ADCR &= ~((0x7<<24)|(0x1<<16));	/* stop ADC now, turn off BURST bit. */
+//  	ADCIntDone = 1;
+//  	return;
+//  }
+//
+//  for ( i = 0; i < ADC_NUM; i++ )
+//  {
+//    if ( regVal & _BV(i) )
+//	{
+//    	uint32_t adcbuf = 0;
+//        switch (i) {
+// 			case 0:
+// 				adcbuf = LPC_ADC->ADDR0;
+// 				break;
+// 			case 1:
+// 				adcbuf = LPC_ADC->ADDR1;
+// 				break;
+// 			case 2:
+// 				adcbuf = LPC_ADC->ADDR2;
+// 				break;
+// 			case 3:
+// 				adcbuf = LPC_ADC->ADDR3;
+// 				break;
+// 			case 4:
+// 				adcbuf = LPC_ADC->ADDR4;
+// 				break;
+// 			case 5:
+// 				adcbuf = LPC_ADC->ADDR5;
+// 				break;
+// 			case 6:
+// 				adcbuf = LPC_ADC->ADDR6;
+// 				break;
+// 			case 7:
+// 				adcbuf = LPC_ADC->ADDR7;
+// 				break;
+// 		}
+//	  ADCValue[i] = ( adcbuf >> 4 ) & 0xFFF;
+//	}
+//  }
+//
+//#if BURST_MODE
+//  BurstCounter++;
+//  channel_flag |= (regVal & 0xFF);
+//  if ( (channel_flag & 0xFF) == 0xFF )
+//  {
+//	/* All the bits in have been set, it indicates all the ADC
+//	channels have been converted. */
+//	LPC_ADC->ADCR &= ~(0x1<<16);	/* Clear BURST mode, stop ADC now */
+//  	channel_flag = 0;
+//	ADCIntDone = 1;
+//  }
+//#else
+//  LPC_ADC->CR &= ~(0x7<<24);	/* stop ADC now */
+//  ADCIntDone = 1;
+//#endif
+//  return;
+//}
 #endif
 
 /*****************************************************************************
@@ -240,14 +240,14 @@ void ADCInit( uint32_t ADC_Clk )
 
 
   /* If POLLING, no need to do the following */
-#if ADC_INTERRUPT_FLAG
+//#if ADC_INTERRUPT_FLAG
   NVIC_EnableIRQ(ADC_IRQn);
-#if BURST_MODE
-  LPC_ADC->ADINTEN = 0xFF;		/* Enable all interrupts */
-#else
-  LPC_ADC->ADINTEN = 0x1FF;		/* Enable all interrupts */
-#endif
-#endif
+//#if BURST_MODE
+  LPC_ADC->ADINTEN = 0x1;		/* Enable all interrupts */
+//#else
+//  LPC_ADC->ADINTEN = 0x1FF;		/* Enable all interrupts */
+//#endif
+//#endif
   return;
 }
 

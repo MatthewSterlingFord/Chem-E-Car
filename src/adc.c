@@ -24,49 +24,54 @@ extern volatile uint32_t ADCValue[ADC_NUM];
 extern volatile uint32_t ADCIntDone;
 uint32_t variable=0;
 
-
+void ADC_IRQHandler (void) {
+	uint32_t res;
+	float voltage;
+	if((LPC_ADC->ADDR0 >> 31) & 1){
+		  res = (LPC_ADC->ADDR0 >> 4) & 0xFFF;
+		  voltage = ((float)res/(float)0xFFF)*(float)3.1;
+		 // printf("%f %s\n", voltage, "Volts");
+		  if(res >= 0xAAA){
+			  //printf("%d\n", res);
+			  GPIOSetValue(0, LED_R2, HIGH);
+			  GPIOSetValue(0, LED_B2, LOW);
+			  GPIOSetValue(0, LED_G2, LOW);
+		  }else if(res >= 0x555){
+			  //printf("%d\n", res);
+			  GPIOSetValue(0, LED_R2, LOW);
+			  			  GPIOSetValue(0, LED_B2, HIGH);
+			  			  GPIOSetValue(0, LED_G2, LOW);
+		  }else{
+			  //printf("%d\n", res);
+			  GPIOSetValue(0, LED_R2, LOW);
+			  			  GPIOSetValue(0, LED_B2, LOW);
+			  			  GPIOSetValue(0, LED_G2, HIGH);
+		  }
+		  //Restarts ADC Read
+		  LPC_ADC->ADCR |= (1 << 24);
+	  }
+}
 void initADC (int ADCNumber) {
-	 uint32_t res;
-	 float voltage;
+
 
 	ADCInit(ADC_CLK);
 
 	GPIOSetValue(2, LED_G1_p2, LOW);
 
+	//Starts ADC Read
 	LPC_ADC->ADCR |= (1 << 24);
-	while(1){
-		  if((LPC_ADC->ADDR0 >> 31) & 1){
-			  res = (LPC_ADC->ADDR0 >> 4) & 0xFFF;
-			  voltage = ((float)res/(float)0xFFF)*3.1;
-			  printf("%f\n", voltage);
-			  if(res >= 0xAAA){
-				  //printf("%d\n", res);
-				  GPIOSetValue(0, LED_R2, HIGH);
-				  GPIOSetValue(0, LED_B2, LOW);
-				  GPIOSetValue(0, LED_G2, LOW);
-			  }else if(res >= 0x555){
-				  //printf("%d\n", res);
-				  GPIOSetValue(0, LED_R2, LOW);
-				  			  GPIOSetValue(0, LED_B2, HIGH);
-				  			  GPIOSetValue(0, LED_G2, LOW);
-			  }else{
-				  //printf("%d\n", res);
-				  GPIOSetValue(0, LED_R2, LOW);
-				  			  GPIOSetValue(0, LED_B2, LOW);
-				  			  GPIOSetValue(0, LED_G2, HIGH);
-			  }
-			  LPC_ADC->ADCR |= (1 << 24);
-		  }
-	  }
-
-	while(1)
-	{
-		ADCRead( 5 );
-		//other code can be done here
-		while ( !ADCIntDone );
-		int variable = ADCValue[5];
-		ADCIntDone = 0;
-	}
+//	while(1){
+//		// //Put polling code here to use ADC without interupting
+//	}
+//  //Really old... from sc or lpc example
+//	while(1)
+//	{
+//		ADCRead( 5 );
+//		//other code can be done here
+//		while ( !ADCIntDone );
+//		int variable = ADCValue[5];
+//		ADCIntDone = 0;
+//	}
 }
 
 void initADC_george (int ADCNumber) {

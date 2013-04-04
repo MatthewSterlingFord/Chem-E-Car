@@ -70,6 +70,61 @@
 #define LED_G2   (26)
 #endif
 
+#ifndef TOP_SEG_1
+#define TOP_SEG_1  (6)
+#endif
+
+#ifndef TOP_LEFT_SEG_1
+#define TOP_LEFT_SEG_1   (12)
+#endif
+
+#ifndef TOP_RIGHT_SEG_1
+#define TOP_RIGHT_SEG_1   (7)
+#endif
+
+#ifndef MIDDLE_SEG_1
+#define MIDDLE_SEG_1   (1)
+#endif
+
+#ifndef BOTTOM_LEFT_SEG_1
+#define BOTTOM_LEFT_SEG_1   (11)
+#endif
+
+#ifndef BOTTOM_RIGHT_SEG_1
+#define BOTTOM_RIGHT_SEG_1   (8)
+#endif
+
+#ifndef BOTTOM_SEG_1
+#define BOTTOM_SEG_1   (10)
+#endif
+
+//#ifndef SEVEN_SEG_DATA_INPUT_1
+//#define SEVEN_SEG_DATA_INPUT_1   (6)
+//#endif
+//
+//#ifndef SEVEN_SEG_DATA_INPUT_1
+//#define SEVEN_SEG_DATA_INPUT_1   (6)
+//#endif
+//
+//#ifndef SEVEN_SEG_LATCH_1
+//#define SEVEN_SEG_LATCH_1   (7)
+//#endif
+//
+//#ifndef SEVEN_SEG_CLOCK_1
+//#define SEVEN_SEG_CLOCK_1   (8)
+//#endif
+//
+//#ifndef SEVEN_SEG_DATA_INPUT_2
+//#define SEVEN_SEG_DATA_INPUT_2   (10)
+//#endif
+//
+//#ifndef SEVEN_SEG_LATCH_2
+//#define SEVEN_SEG_LATCH_2   (11)
+//#endif
+//
+//#ifndef SEVEN_SEG_CLOCK_2
+//#define SEVEN_SEG_CLOCK_2   (12)
+//#endif
 //typedef enum {RESET = 0, SET = !RESET} FlagStatus, ITStatus;
 //typedef enum {DISABLE = 0, ENABLE = !DISABLE} FunctionalState;
 

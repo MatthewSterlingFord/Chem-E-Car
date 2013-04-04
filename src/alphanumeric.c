@@ -6,6 +6,7 @@
  */
 
 #include "alphanumeric.h"
+#include "type.h"
 
 #define DEFINE_ALPHA_PIN(name, port, pin) \
 inline void ALPHA_##name##_ON() { \
@@ -18,14 +19,13 @@ inline void ALPHA_##name##_INIT() { \
   LPC_GPIO##port ->FIODIR |= (1 << pin); \
 }
 
-DEFINE_ALPHA_PIN(TOP, 1, 18);
-DEFINE_ALPHA_PIN(TOP_LEFT, 1, 19);
-DEFINE_ALPHA_PIN(TOP_RIGHT, 1, 20);
-DEFINE_ALPHA_PIN(MIDDLE, 1, 21);
-DEFINE_ALPHA_PIN(BOTTOM_LEFT, 1, 22);
-DEFINE_ALPHA_PIN(BOTTOM_RIGHT, 1, 23);
-DEFINE_ALPHA_PIN(BOTTOM, 1, 24);
-DEFINE_ALPHA_PIN(DOT, 1, 25);
+DEFINE_ALPHA_PIN(TOP, 2, TOP_SEG_1);
+DEFINE_ALPHA_PIN(TOP_LEFT, 2, TOP_LEFT_SEG_1);
+DEFINE_ALPHA_PIN(TOP_RIGHT, 2, TOP_RIGHT_SEG_1);
+DEFINE_ALPHA_PIN(MIDDLE, 2, MIDDLE_SEG_1);
+DEFINE_ALPHA_PIN(BOTTOM_LEFT, 2, BOTTOM_LEFT_SEG_1);
+DEFINE_ALPHA_PIN(BOTTOM_RIGHT, 2, BOTTOM_RIGHT_SEG_1);
+DEFINE_ALPHA_PIN(BOTTOM, 2, BOTTOM_SEG_1);
 
 inline void alpha_init() {
   ALPHA_TOP_INIT();
@@ -35,17 +35,17 @@ inline void alpha_init() {
   ALPHA_BOTTOM_LEFT_INIT();
   ALPHA_BOTTOM_RIGHT_INIT();
   ALPHA_BOTTOM_INIT();
-  ALPHA_DOT_INIT();
-  ALPHA_DOT_OFF();
+//  ALPHA_DOT_INIT();
+ // ALPHA_DOT_OFF();
 }
 
-inline void alpha_dot_on() {
-  ALPHA_DOT_ON();
-}
-
-inline void alpha_dot_off() {
-  ALPHA_DOT_OFF();
-}
+//inline void alpha_dot_on() {
+//  ALPHA_DOT_ON();
+//}
+//
+//inline void alpha_dot_off() {
+//  ALPHA_DOT_OFF();
+//}
 
 inline void alpha_display(char c) {
   // Characters generated from:
