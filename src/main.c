@@ -54,7 +54,7 @@ const char *HEX_CHAR_TABLE = "0123456789ABCDEF";
 volatile static uint32_t idleLoops = 0;
 uint_fast16_t analog_val;
 
-
+int toReset = 0;
 /******************************************************************************
 ** Function name:		PWM1_IRQHandler
 **
@@ -65,16 +65,20 @@ uint_fast16_t analog_val;
 ** Returned value:		None
 **
 ******************************************************************************/
+int color;
+
 void PWM1_IRQHandler (void)
 {
-	  uint32_t regVal;
-  if(LPC_PWM1 -> IR == (LPC_PWM1->IR) & (1<<1)){
-	  PWM_Set(1,1,speed);			//Set PWM offset
+  uint32_t regVal;
+  if(color <= 2){
+	  PWM_Set(1,6,speed);			//Set PWM offset
   }else{
- 	  PWM_Set(1,5,17);			//Set PWM offset
+	  //speed=0;
+	  PWM_Set(1,6,0);
   }
-  regVal = (LPC_PWM1->IR);
+  regVal = LPC_PWM1->IR;
   LPC_PWM1->IR |= regVal;		/* clear interrupt flag on match 0 */
+  return;
 }
 
 long int num_overflows = 0;
@@ -144,7 +148,6 @@ void EINT3_IRQHandler (void)
 }
 
 int show_big_battery = 1;
-
 void ADC_IRQHandler (void) {
 	uint32_t res;
 	//float big_battery_voltage;
@@ -160,14 +163,18 @@ void ADC_IRQHandler (void) {
 			  GPIOSetValue(0, LED_R2, HIGH);
 			  GPIOSetValue(0, LED_B2, LOW);
 			  GPIOSetValue(0, LED_G2, LOW);
+			  //toReset=1;
+			  color = 3;
 		  }else if(res >= 0x555){
 			  GPIOSetValue(0, LED_R2, LOW);
 			  GPIOSetValue(0, LED_B2, HIGH);
 			  GPIOSetValue(0, LED_G2, LOW);
+			  color = 2;
 		  }else{
 			  GPIOSetValue(0, LED_R2, LOW);
 			  GPIOSetValue(0, LED_B2, LOW);
     		  GPIOSetValue(0, LED_G2, HIGH);
+    		  color = 1;
 		  }
 		  //Restarts ADC Read
 		  LPC_ADC->ADCR |= (1 << 24);
@@ -322,7 +329,7 @@ void init_both_SEVEN_SEGMENT_DISPLAY_pins(){
 
 void init_pwm_mixer(){
 	PWM_Init(1,6,100);											//Initialize PWM port 6
-	//PWM_Start(1);												//Start PWM
+	PWM_Start(1);												//Start PWM
 
 	//TODO ensure this does not cause issues with Debug LED
 	TimerInit(1, 100);											//Initialize timer
@@ -345,56 +352,18 @@ void init_pwm_mixer(){
 
 void init_pwm_motor_controller(){
 
-	LPC_SC ->PCONP |= 18;
-	LPC_PINCON->PINSEL3 |= (1 << 6);
-	LPC_PINCON->PINSEL3 &= ~(1 << 7);
+//	LPC_SC ->PCONP |= 18;
+//	LPC_PINCON->PINSEL3 |= (1 << 6);
+//	LPC_PINCON->PINSEL3 &= ~(1 << 7);
 
-	//PWM_Init(1,5,100);											//Initialize PWM port 5
-
-		switch (5) {
-
-			case 1:
-				LPC_PINCON->PINSEL4 |= (01 << 0);
-				break;
-
-			case 2:
-				LPC_PINCON->PINSEL4 |= (01 << 2);
-				break;
-
-			case 3:
-				LPC_PINCON->PINSEL4 |= (01 << 4);
-				break;
-
-			case 4:
-				LPC_PINCON->PINSEL4 |= (01 << 6);
-				break;
-
-			case 5:
-				LPC_PINCON->PINSEL4 |= (01 << 8);
-				break;
-
-			case 6:
-				LPC_PINCON->PINSEL4 |= (01 << 10);
-				break;
-		}
-
-
-		LPC_PWM1->TCR = TCR_RESET;	/* Counter Reset */
-		LPC_PWM1->PR = 0x00;		/* count frequency:Fpclk */
-		LPC_PWM1->MCR = PWMMR5I;	/* interrupt on PWMMR0, reset on PWMMR0, reset
-									TC if PWM matches */
-		LPC_PWM1->MR5 = 100;		/* set PWM cycle */
-		/* all PWM latch enabled */
-
-		//TODO Change to only set PWM1.1 and PWM1.5
-		LPC_PWM1->LER = LER0_EN | LER1_EN | LER2_EN | LER3_EN | LER4_EN | LER5_EN | LER6_EN;
-
-	PWM_Start(1);												//Start PWM
-
-	//TODO ensure this does not cause issues with Debug LED
-	//TimerInit(1, 100);											//Initialize timer
-
-	int pwmoffset = 0;											//Declare pwmoffset as integer
+////	PWM_Init(1,6,100);											//Initialize PWM port 6
+////
+////	PWM_Start(1);												//Start PWM
+////
+////	//TODO ensure this does not cause issues with Debug LED
+////	TimerInit(1, 100);											//Initialize timer
+//
+//	int pwmoffset = 0;											//Declare pwmoffset as integer
 
 }
 
@@ -464,7 +433,7 @@ void init(void){
 	init_pwm_mixer();
 
 	//c_entry();
-	init_encoder();
+	//init_encoder();
 
 	//init_pwm_motor_controller();
 
